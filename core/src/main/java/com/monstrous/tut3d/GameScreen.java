@@ -1,6 +1,7 @@
 package com.monstrous.tut3d;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -11,7 +12,6 @@ import com.badlogic.gdx.graphics.g3d.*;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -21,7 +21,7 @@ public class GameScreen extends ScreenAdapter {
     public final Color BACKGROUND_COLOUR = new Color(153f/255f, 255f/255f, 236f/255f, 1.0f);
 
     private PerspectiveCamera cam;
-    private CameraInputController camController;
+    private CamController camController;
     private Environment environment;
     private Model modelGround;
     private Texture textureGround;
@@ -31,14 +31,18 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void show() {
         cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
-        cam.position.set(10f, 1.5f, 5f);
-        cam.lookAt(0,0,0);
+        cam.position.set(10f, Settings.eyeHeight, 5f);
+        cam.lookAt(0,Settings.eyeHeight,0);
         cam.near = 1f;
         cam.far = 300f;
         cam.update();
 
-        camController = new CameraInputController(cam);
+        camController = new CamController (cam);
         Gdx.input.setInputProcessor(camController);
+
+        // hide the mouse cursor and fix it to screen centre, so it doesn't go out the window canvas
+        Gdx.input.setCursorCatched(true);
+        Gdx.input.setCursorPosition(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2);
 
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.6f, 0.6f, 0.6f, 1f));
@@ -61,15 +65,18 @@ public class GameScreen extends ScreenAdapter {
         // create and position model instances
 
         instances = new Array<>();
-        instances.add(new ModelInstance(modelGround, 0, -1, 0));	// 'table top' surface
+        instances.add(new ModelInstance(modelGround, 0, -1, 0));    // 'table top' surface
 
         modelBatch = new ModelBatch();
     }
 
     @Override
     public void render(float delta) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE))
+            Gdx.app.exit();
+
         // update
-        camController.update();
+        camController.update(Gdx.graphics.getDeltaTime());
 
         // render
         ScreenUtils.clear(BACKGROUND_COLOUR, true);
