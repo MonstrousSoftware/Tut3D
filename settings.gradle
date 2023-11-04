@@ -1,0 +1,1 @@
+include 'core', 'teavm', 'lwjgl3'
