@@ -7,14 +7,17 @@ import com.badlogic.gdx.ScreenAdapter;
 public class GameScreen extends ScreenAdapter {
 
     private GameView gameView;
+    private GridView gridView;
     private World world;
     private CamController camController;
 
     @Override
     public void show() {
-        gameView = new GameView();
-        world = new World(gameView);
+
+        world = new World("models/step4a.gltf");
         Populator.populate(world);
+        gameView = new GameView(world);
+        gridView = new GridView();
 
         camController = new CamController (gameView.getCamera());
         Gdx.input.setInputProcessor(camController);
@@ -22,7 +25,6 @@ public class GameScreen extends ScreenAdapter {
         // hide the mouse cursor and fix it to screen centre, so it doesn't go out the window canvas
         Gdx.input.setCursorCatched(true);
         Gdx.input.setCursorPosition(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2);
-
     }
 
     @Override
@@ -34,6 +36,7 @@ public class GameScreen extends ScreenAdapter {
         camController.update(Gdx.graphics.getDeltaTime());
         world.update(delta);
         gameView.render(delta);
+        gridView.render(gameView.getCamera());
     }
 
     @Override
@@ -50,6 +53,7 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         gameView.dispose();
+        gridView.dispose();
         world.dispose();
     }
 }

@@ -18,18 +18,17 @@ import net.mgsx.gltf.scene3d.utils.IBLBuilder;
 
 public class GameView implements Disposable {
 
-    private static final int SHADOW_MAP_SIZE = 4096;
+    private final World world;                                // reference to World
+    private final SceneManager sceneManager;
+    private final PerspectiveCamera cam;
+    private final Cubemap diffuseCubemap;
+    private final Cubemap environmentCubemap;
+    private final Cubemap specularCubemap;
+    private final Texture brdfLUT;
+    private final SceneSkybox skybox;
 
-    private SceneManager sceneManager;
-    private PerspectiveCamera cam;
-    private Cubemap diffuseCubemap;
-    private Cubemap environmentCubemap;
-    private Cubemap specularCubemap;
-    private Texture brdfLUT;
-    private SceneSkybox skybox;
-    private DirectionalLightEx light;
-
-    public GameView() {
+    public GameView(World world) {
+        this.world = world;
         sceneManager = new SceneManager();
 
         cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
@@ -42,7 +41,8 @@ public class GameView implements Disposable {
         sceneManager.setCamera(cam);
 
         // setup light
-        DirectionalLightEx light = new net.mgsx.gltf.scene3d.lights.DirectionalShadowLight(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE).setViewport(150,150,5,400);
+        DirectionalLightEx light = new net.mgsx.gltf.scene3d.lights.DirectionalShadowLight(Settings.shadowMapSize, Settings.shadowMapSize)
+            .setViewport(50,50,10f,100);
         light.direction.set(1, -3, 1).nor();
         light.color.set(Color.WHITE);
         light.intensity = 3f;
@@ -69,24 +69,27 @@ public class GameView implements Disposable {
         sceneManager.setSkyBox(skybox);
     }
 
-    public void clear(){
-        sceneManager.getRenderableProviders().clear();        // remove all scenes from sceneManager
-    }
-
-    public void add( Scene scene ){
-        sceneManager.addScene(scene);
-    }
-
-    public void remove( Scene scene ){
-        sceneManager.removeScene(scene);
-    }
 
     public PerspectiveCamera getCamera() {
         return cam;
     }
 
+    public void refresh() {
+        sceneManager.getRenderableProviders().clear();        // remove all scenes
+
+        // add scene for each game object
+        int num = world.getNumGameObjects();
+        for(int i = 0; i < num; i++){
+            Scene scene = world.getGameObject(i).scene;
+            sceneManager.addScene(scene);
+        }
+    }
+
     public void render(float delta ) {
         cam.update();
+        if(world.isDirty())
+            refresh();
+
         sceneManager.update(delta);
 
         // render

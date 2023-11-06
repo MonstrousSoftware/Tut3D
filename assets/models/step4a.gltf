@@ -98,10 +98,10 @@
 	],
 	"materials":[
 		{
-			"doubleSided":true,
 			"name":"ground",
 			"normalTexture":{
-				"index":0
+				"index":0,
+				"scale":10
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
@@ -269,8 +269,8 @@
 		},
 		{
 			"mimeType":"image/png",
-			"name":"Image",
-			"uri":"textures/Image.png"
+			"name":"Stylized_Stone_Floor_005_roughness",
+			"uri":"textures/Stylized_Stone_Floor_005_roughness.png"
 		},
 		{
 			"mimeType":"image/jpeg",

@@ -11,24 +11,36 @@ import net.mgsx.gltf.scene3d.scene.SceneAsset;
 
 public class World implements Disposable {
 
-    private GameView gameView;
-    private SceneAsset sceneAsset;
-    public Array<GameObject> gameObjects;
-    public GameObject player;
 
-    public World(GameView gameView) {
-        this.gameView = gameView;
+    private final Array<GameObject> gameObjects;
+    public GameObject player;
+    private final SceneAsset sceneAsset;
+    private boolean isDirty;
+
+    public World(String modelFileName) {
+
         gameObjects = new Array<>();
-        sceneAsset = new GLTFLoader().load(Gdx.files.internal("models/step4a.gltf"));
+        sceneAsset = new GLTFLoader().load(Gdx.files.internal(modelFileName));
         for(Node node : sceneAsset.scene.model.nodes){  // print some debug info
             Gdx.app.log("Node ", node.id);
         }
+        isDirty = true;
     }
 
+    public boolean isDirty(){
+        return isDirty;
+    }
     public void clear() {
         gameObjects.clear();
-        gameView.clear();
         player = null;
+        isDirty = true;
+    }
+    public int getNumGameObjects() {
+        return gameObjects.size;
+    }
+
+    public GameObject getGameObject(int index) {
+        return gameObjects.get(index);
     }
 
     public GameObject spawnObject(String name, Vector3 position){
@@ -37,16 +49,16 @@ public class World implements Disposable {
             Gdx.app.error("Cannot find node in GLTF", name);
             return null;
         }
-        gameView.add(scene);
         scene.modelInstance.transform.translate(position);
         GameObject go = new GameObject(scene);
         gameObjects.add(go);
+        isDirty = true;
         return go;
     }
 
     public void removeObject(GameObject gameObject){
         gameObjects.removeValue(gameObject, true);
-        gameView.remove(gameObject.scene);
+        isDirty = true;
     }
 
     public void update( float deltaTime ) {
