@@ -3,11 +3,15 @@ package com.monstrous.tut3d;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
+import com.monstrous.tut3d.views.GameView;
+import com.monstrous.tut3d.views.GridView;
+import com.monstrous.tut3d.views.PhysicsView;
 
 public class GameScreen extends ScreenAdapter {
 
     private GameView gameView;
     private GridView gridView;
+    private PhysicsView physicsView;
     private World world;
     private CamController camController;
 
@@ -18,6 +22,7 @@ public class GameScreen extends ScreenAdapter {
         Populator.populate(world);
         gameView = new GameView(world);
         gridView = new GridView();
+        physicsView = new PhysicsView(world);
 
         camController = new CamController (gameView.getCamera());
         Gdx.input.setInputProcessor(camController);
@@ -31,12 +36,15 @@ public class GameScreen extends ScreenAdapter {
     public void render(float delta) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE))
             Gdx.app.exit();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R))
+            Populator.populate(world);
 
         // update
-        camController.update(Gdx.graphics.getDeltaTime());
+        camController.update(delta);
         world.update(delta);
         gameView.render(delta);
         gridView.render(gameView.getCamera());
+        physicsView.render(gameView.getCamera());
     }
 
     @Override
@@ -54,6 +62,7 @@ public class GameScreen extends ScreenAdapter {
     public void dispose() {
         gameView.dispose();
         gridView.dispose();
+        physicsView.dispose();
         world.dispose();
     }
 }

@@ -4,6 +4,7 @@ eclipse.project.name = appName + '-core'
 dependencies {
   api "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "com.github.antzGames:gdx-ode4j:master-SNAPSHOT"
   api "com.github.mgsx-dev.gdx-gltf:gltf:$gdxGltfVersion"
   api "de.golfgl.gdxcontrollerutils:gdx-controllerutils-mapping:$controllerMappingVersion"
   api "de.golfgl.gdxcontrollerutils:gdx-controllerutils-scene2d:$controllerScene2DVersion"

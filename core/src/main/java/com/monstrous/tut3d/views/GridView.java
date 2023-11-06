@@ -1,4 +1,4 @@
-package com.monstrous.tut3d;
+package com.monstrous.tut3d.views;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.VertexAttributes;
