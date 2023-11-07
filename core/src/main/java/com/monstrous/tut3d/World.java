@@ -89,8 +89,7 @@ public class World implements Disposable {
     private void syncToPhysics() {
         for(GameObject go : gameObjects){
             if( go.body.geom.getBody() != null) {
-                go.scene.modelInstance.transform.set(go.body.getOrientation());
-                go.scene.modelInstance.transform.trn(go.body.getPosition());
+                go.scene.modelInstance.transform.set(go.body.getPosition(), go.body.getOrientation());
             }
         }
     }

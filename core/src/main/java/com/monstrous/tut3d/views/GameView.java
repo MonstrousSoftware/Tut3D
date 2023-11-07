@@ -83,7 +83,7 @@ public class GameView implements Disposable {
         int num = world.getNumGameObjects();
         for(int i = 0; i < num; i++){
             Scene scene = world.getGameObject(i).scene;
-            sceneManager.addScene(scene);
+            sceneManager.addScene(scene, false);
         }
     }
 

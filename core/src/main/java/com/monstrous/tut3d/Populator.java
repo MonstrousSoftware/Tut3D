@@ -17,6 +17,7 @@ public class Populator {
         world.spawnObject(false, "ball", CollisionShapeType.SPHERE, new Vector3(0,4,0), 1f);
         world.spawnObject(false, "ball", CollisionShapeType.SPHERE,new Vector3(-1,5,0), 1f);
         world.spawnObject(false, "ball", CollisionShapeType.SPHERE, new Vector3(-2,6,0), 1f);
-        world.player = world.spawnObject(false, "ducky",CollisionShapeType.SPHERE, Vector3.Zero, 1f);
+
+        world.player = world.spawnObject(false, "ducky",CollisionShapeType.CAPSULE, new Vector3(0,1,0), 1f);
     }
 }

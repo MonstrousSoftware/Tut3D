@@ -14,14 +14,13 @@ public class PhysicsWorld implements Disposable {
 
     DWorld world;
     public DSpace space;
-    private final DJointGroup contactgroup;
+    private final DJointGroup contactGroup;
 
     public PhysicsWorld() {
-
         OdeHelper.initODE2(0);
         Gdx.app.log("ODE version", OdeHelper.getVersion());
         Gdx.app.log("ODE config", OdeHelper.getConfiguration());
-        contactgroup = OdeHelper.createJointGroup();
+        contactGroup = OdeHelper.createJointGroup();
         reset();
     }
 
@@ -33,12 +32,13 @@ public class PhysicsWorld implements Disposable {
             space.destroy();
 
         world = OdeHelper.createWorld();
-        space = OdeHelper.createSapSpace( null, DSapSpace.AXES.XZY );           // we want Y to point up
+        space = OdeHelper.createSapSpace( null, DSapSpace.AXES.XYZ );
 
-        world.setGravity (0, Settings.gravity,0);
-        world.setCFM (1e-2);
-        world.setERP (0.8);
+        world.setGravity (0, 0, Settings.gravity);  // Z is up-axis in ODE
+        world.setCFM (1e-5);
+        world.setERP (0.4);
         world.setQuickStepNumIterations (40);
+        world.setAngularDamping(0.5f);
 
         // set auto disable parameters to make inactive objects go to sleep
         world.setAutoDisableFlag(true);
@@ -50,8 +50,8 @@ public class PhysicsWorld implements Disposable {
     // update the physics with one (fixed) time step
     public void update() {
         space.collide(null, nearCallback);
-        world.quickStep(0.05f);
-        contactgroup.empty();
+        world.quickStep(0.025f);
+        contactGroup.empty();
     }
 
     private final DGeom.DNearCallback nearCallback = new DGeom.DNearCallback() {
@@ -76,13 +76,12 @@ public class PhysicsWorld implements Disposable {
                         contact.surface.mu = 0.01;  // low friction for balls & capsules
                     else
                         contact.surface.mu = 0.5;
-
                     contact.surface.slip1 = 0.0;
                     contact.surface.slip2 = 0.0;
                     contact.surface.soft_erp = 0.8;
                     contact.surface.soft_cfm = 0.01;
 
-                    DJoint c = OdeHelper.createContactJoint(world, contactgroup, contact);
+                    DJoint c = OdeHelper.createContactJoint(world, contactGroup, contact);
                     c.attach(o1.getBody(), o2.getBody());
                 }
             }
@@ -91,7 +90,7 @@ public class PhysicsWorld implements Disposable {
 
     @Override
     public void dispose() {
-        contactgroup.destroy();
+        contactGroup.destroy();
         space.destroy();
         world.destroy();
         OdeHelper.closeODE();
