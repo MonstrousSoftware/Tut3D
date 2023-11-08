@@ -1,14 +1,17 @@
 package com.monstrous.tut3d.views;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cubemap;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g3d.model.NodePart;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.monstrous.tut3d.Settings;
 import com.monstrous.tut3d.World;
+import com.monstrous.tut3d.inputs.CameraController;
 import net.mgsx.gltf.scene3d.attributes.PBRCubemapAttribute;
 import net.mgsx.gltf.scene3d.attributes.PBRFloatAttribute;
 import net.mgsx.gltf.scene3d.attributes.PBRTextureAttribute;
@@ -28,6 +31,7 @@ public class GameView implements Disposable {
     private final Cubemap specularCubemap;
     private final Texture brdfLUT;
     private final SceneSkybox skybox;
+    private final CameraController camController;
 
     public GameView(World world) {
         this.world = world;
@@ -41,6 +45,8 @@ public class GameView implements Disposable {
         cam.update();
 
         sceneManager.setCamera(cam);
+        camController = new CameraController(cam);
+        camController.setThirdPersonMode(true);
 
         // setup light
         DirectionalLightEx light = new net.mgsx.gltf.scene3d.lights.DirectionalShadowLight(Settings.shadowMapSize, Settings.shadowMapSize)
@@ -76,6 +82,10 @@ public class GameView implements Disposable {
         return cam;
     }
 
+    public CameraController getCameraController() {
+        return camController;
+    }
+
     public void refresh() {
         sceneManager.getRenderableProviders().clear();        // remove all scenes
 
@@ -83,18 +93,25 @@ public class GameView implements Disposable {
         int num = world.getNumGameObjects();
         for(int i = 0; i < num; i++){
             Scene scene = world.getGameObject(i).scene;
-            sceneManager.addScene(scene, false);
+            if(world.getGameObject(i).visible)
+                sceneManager.addScene(scene, false);
         }
     }
 
     public void render(float delta ) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F2)) {
+            boolean thirdPersonView = !camController.getThirdPersonMode();
+            camController.setThirdPersonMode(thirdPersonView);
+            world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
+            refresh();
+        }
+
+        camController.update(world.getPlayer().getPosition(), world.getPlayerController().getViewingDirection());
         cam.update();
         if(world.isDirty())
             refresh();
-
         sceneManager.update(delta);
 
-        // render
         ScreenUtils.clear(Color.PURPLE, true);  // note clear color will be hidden by skybox anyway
         sceneManager.render();
     }

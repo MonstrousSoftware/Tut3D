@@ -2,6 +2,7 @@ package com.monstrous.tut3d;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.ScreenAdapter;
 import com.monstrous.tut3d.views.GameView;
 import com.monstrous.tut3d.views.GridView;
@@ -13,7 +14,7 @@ public class GameScreen extends ScreenAdapter {
     private GridView gridView;
     private PhysicsView physicsView;
     private World world;
-    private CamController camController;
+    private boolean debugRender = false;
 
     @Override
     public void show() {
@@ -24,12 +25,17 @@ public class GameScreen extends ScreenAdapter {
         gridView = new GridView();
         physicsView = new PhysicsView(world);
 
-        camController = new CamController (gameView.getCamera());
-        Gdx.input.setInputProcessor(camController);
+        InputMultiplexer im = new InputMultiplexer();
+        Gdx.input.setInputProcessor(im);
+        im.addProcessor(gameView.getCameraController());
+        im.addProcessor(world.getPlayerController());
 
         // hide the mouse cursor and fix it to screen centre, so it doesn't go out the window canvas
         Gdx.input.setCursorCatched(true);
         Gdx.input.setCursorPosition(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2);
+
+        Gdx.input.setCatchKey(Input.Keys.F1, true);
+        Gdx.input.setCatchKey(Input.Keys.F2, true);
     }
 
     @Override
@@ -38,13 +44,18 @@ public class GameScreen extends ScreenAdapter {
             Gdx.app.exit();
         if (Gdx.input.isKeyJustPressed(Input.Keys.R))
             Populator.populate(world);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F))
+            world.shootBall();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F1))
+            debugRender = !debugRender;
 
-        // update
-        camController.update(delta);
         world.update(delta);
+
         gameView.render(delta);
-        gridView.render(gameView.getCamera());
-        physicsView.render(gameView.getCamera());
+        if(debugRender) {
+            gridView.render(gameView.getCamera());
+            physicsView.render(gameView.getCamera());
+        }
     }
 
     @Override

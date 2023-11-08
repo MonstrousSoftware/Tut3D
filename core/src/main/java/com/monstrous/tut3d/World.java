@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.monstrous.tut3d.inputs.PlayerController;
 import com.monstrous.tut3d.physics.CollisionShapeType;
 import com.monstrous.tut3d.physics.PhysicsBody;
 import com.monstrous.tut3d.physics.PhysicsBodyFactory;
@@ -17,11 +18,12 @@ import net.mgsx.gltf.scene3d.scene.SceneAsset;
 public class World implements Disposable {
 
     private final Array<GameObject> gameObjects;
-    public GameObject player;
+    private GameObject player;
     private final SceneAsset sceneAsset;
     private boolean isDirty;
     private final PhysicsWorld physicsWorld;
     private final PhysicsBodyFactory factory;
+    private final PlayerController playerController;
 
     public World(String modelFileName) {
 
@@ -33,13 +35,16 @@ public class World implements Disposable {
         isDirty = true;
         physicsWorld = new PhysicsWorld();
         factory = new PhysicsBodyFactory(physicsWorld);
+        playerController = new PlayerController();
     }
 
     public boolean isDirty(){
         return isDirty;
     }
+
     public void clear() {
         physicsWorld.reset();
+        playerController.reset();
 
         gameObjects.clear();
         player = null;
@@ -53,12 +58,25 @@ public class World implements Disposable {
         return gameObjects.get(index);
     }
 
-    public GameObject spawnObject(boolean isStatic, String name, CollisionShapeType shape, Vector3 position, float mass){
+    public GameObject getPlayer() {
+        return player;
+    }
+
+    public void setPlayer( GameObject player ){
+        this.player = player;
+        player.body.setPlayerCharacteristics();
+    }
+
+    public PlayerController getPlayerController() {
+        return playerController;
+    }
+
+    public GameObject spawnObject(boolean isStatic, String name, CollisionShapeType shape, boolean resetPosition, Vector3 position, float mass){
         Scene scene = new Scene(sceneAsset.scene, name);
         if(scene.modelInstance.nodes.size == 0)
             throw new RuntimeException("Cannot find node in GLTF file: " + name);
 
-        applyNodeTransform(scene.modelInstance, scene.modelInstance.nodes.first());         // incorporate nodes' transform into model instance transform
+        applyNodeTransform(resetPosition, scene.modelInstance, scene.modelInstance.nodes.first());         // incorporate nodes' transform into model instance transform
         scene.modelInstance.transform.translate(position);
 
         PhysicsBody body = factory.createBody(scene.modelInstance, shape, mass, isStatic);
@@ -68,8 +86,9 @@ public class World implements Disposable {
         return go;
     }
 
-    private void applyNodeTransform(ModelInstance modelInstance, Node node ){
-        modelInstance.transform.mul(node.globalTransform);
+    private void applyNodeTransform(boolean resetPosition, ModelInstance modelInstance, Node node ){
+        if(!resetPosition)
+            modelInstance.transform.mul(node.globalTransform);
         node.translation.set(0,0,0);
         node.scale.set(1,1,1);
         node.rotation.idt();
@@ -82,6 +101,7 @@ public class World implements Disposable {
     }
 
     public void update( float deltaTime ) {
+        playerController.update(player, deltaTime);
         physicsWorld.update();
         syncToPhysics();
     }
@@ -92,8 +112,25 @@ public class World implements Disposable {
                 go.scene.modelInstance.transform.set(go.body.getPosition(), go.body.getOrientation());
             }
         }
+        // the player model is an exception, use information from the player controller, since the rigid body is not rotated.
+        player.scene.modelInstance.transform.setToRotation(Vector3.Z, playerController.getForwardDirection());
+        player.scene.modelInstance.transform.setTranslation(player.body.getPosition());
     }
 
+    private final Vector3 dir = new Vector3();
+    private final Vector3 spawnPos = new Vector3();
+    private final Vector3 shootDirection = new Vector3();
+
+    public void shootBall() {
+        dir.set( playerController.getViewingDirection() );
+        spawnPos.set(dir);
+        spawnPos.add(player.getPosition()); // spawn from 1 unit in front of the player
+        GameObject ball = spawnObject(false, "ball", CollisionShapeType.SPHERE, true, spawnPos, Settings.ballMass );
+        shootDirection.set(dir);        // shoot forward
+        shootDirection.y += 0.5f;       // and slightly up
+        shootDirection.scl(Settings.ballForce);   // scale for speed
+        ball.body.applyForce(shootDirection);
+    }
 
     @Override
     public void dispose() {

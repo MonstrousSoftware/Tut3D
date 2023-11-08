@@ -3,6 +3,7 @@ package com.monstrous.tut3d.views;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.utils.Disposable;
+import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.World;
 
 public class PhysicsView implements Disposable {
@@ -18,8 +19,11 @@ public class PhysicsView implements Disposable {
     public void render( Camera cam ) {
         modelBatch.begin(cam);
         int num = world.getNumGameObjects();
-        for(int i = 0; i < num; i++)
-            world.getGameObject(i).body.render(modelBatch);
+        for(int i = 0; i < num; i++) {
+            GameObject go = world.getGameObject(i);
+            if (go.visible)
+                go.body.render(modelBatch);
+        }
         modelBatch.end();
     }
 
