@@ -24,6 +24,7 @@ public class PhysicsWorld implements Disposable {
         reset();
     }
 
+
     // reset world, note this invalidates (orphans) all rigid bodies and geoms so should be used in combination with deleting all game objects
     public void reset() {
         if(world != null)

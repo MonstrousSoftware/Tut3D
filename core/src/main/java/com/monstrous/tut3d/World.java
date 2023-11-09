@@ -7,10 +7,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.inputs.PlayerController;
-import com.monstrous.tut3d.physics.CollisionShapeType;
-import com.monstrous.tut3d.physics.PhysicsBody;
-import com.monstrous.tut3d.physics.PhysicsBodyFactory;
-import com.monstrous.tut3d.physics.PhysicsWorld;
+import com.monstrous.tut3d.physics.*;
 import net.mgsx.gltf.loaders.gltf.GLTFLoader;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
@@ -24,6 +21,7 @@ public class World implements Disposable {
     private final PhysicsWorld physicsWorld;
     private final PhysicsBodyFactory factory;
     private final PlayerController playerController;
+    private final PhysicsRayCaster rayCaster;
 
     public World(String modelFileName) {
 
@@ -35,7 +33,8 @@ public class World implements Disposable {
         isDirty = true;
         physicsWorld = new PhysicsWorld();
         factory = new PhysicsBodyFactory(physicsWorld);
-        playerController = new PlayerController();
+        rayCaster = new PhysicsRayCaster(physicsWorld);
+        playerController = new PlayerController(rayCaster);
     }
 
     public boolean isDirty(){
@@ -160,5 +159,6 @@ public class World implements Disposable {
 
         sceneAsset.dispose();
         physicsWorld.dispose();
+        rayCaster.dispose();
     }
 }

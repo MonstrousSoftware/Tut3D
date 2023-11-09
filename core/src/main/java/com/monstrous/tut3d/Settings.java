@@ -7,7 +7,7 @@ public class Settings {
     static public float walkSpeed = 5f;    // m/s
     static public float runFactor = 3f;    // m/s
     static public float turnSpeed = 120f;   // degrees/s
-    static public float jumpForce = 0.5f;
+    static public float jumpForce = 10.0f;
 
 
     static public boolean invertLook = false;

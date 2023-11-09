@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.IntIntMap;
 import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.Settings;
+import com.monstrous.tut3d.physics.PhysicsRayCaster;
 
 public class PlayerController extends InputAdapter  {
     public int forwardKey = Input.Keys.W;
@@ -24,11 +25,15 @@ public class PlayerController extends InputAdapter  {
     private final Vector3 viewingDirection;   // look direction, is forwardDirection plus Y component
     private float mouseDeltaX;
     private float mouseDeltaY;
+    private final PhysicsRayCaster rayCaster;
+    private final Vector3 groundNormal = new Vector3();
     private final Vector3 tmp = new Vector3();
     private final Vector3 tmp2 = new Vector3();
     private final Vector3 tmp3 = new Vector3();
 
-    public PlayerController()  {
+
+    public PlayerController(PhysicsRayCaster rayCaster)  {
+        this.rayCaster = rayCaster;
         linearForce = new Vector3();
         forwardDirection = new Vector3();
         viewingDirection = new Vector3();
@@ -107,6 +112,19 @@ public class PlayerController extends InputAdapter  {
         // reset velocities
         linearForce.set(0,0,0);
 
+        boolean isOnGround = rayCaster.isGrounded(player, player.getPosition(), 1.0f, groundNormal);
+        // disable gravity if player is on a slope
+
+        if(isOnGround) {
+            float dot = groundNormal.dot(Vector3.Y);
+            player.body.geom.getBody().setGravityMode(dot >= 0.99f);
+            //Gdx.app.log("isOnGround", player.getPosition().toString()+isOnGround+" N="+groundNormal.toString()+" is on slope: "+(dot<0.99f));
+        } else {
+            player.body.geom.getBody().setGravityMode(true);
+            //Gdx.app.log("isOnGround", ""+isOnGround);
+        }
+
+
         float moveSpeed = Settings.walkSpeed;
         if(keys.containsKey(runShiftKey))
             moveSpeed *= Settings.runFactor;
@@ -130,7 +148,7 @@ public class PlayerController extends InputAdapter  {
         if (keys.containsKey(turnRightKey))
             rotateView(-deltaTime * Settings.turnSpeed, 0);
 
-        if (keys.containsKey(jumpKey) )
+        if (isOnGround && keys.containsKey(jumpKey) )
             linearForce.y =  Settings.jumpForce;
 
         linearForce.scl(80);
