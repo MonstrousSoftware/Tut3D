@@ -71,20 +71,43 @@ public class World implements Disposable {
         return playerController;
     }
 
-    public GameObject spawnObject(boolean isStatic, String name, CollisionShapeType shape, boolean resetPosition, Vector3 position, float mass){
-        Scene scene = new Scene(sceneAsset.scene, name);
-        if(scene.modelInstance.nodes.size == 0)
-            throw new RuntimeException("Cannot find node in GLTF file: " + name);
-
-        applyNodeTransform(resetPosition, scene.modelInstance, scene.modelInstance.nodes.first());         // incorporate nodes' transform into model instance transform
-        scene.modelInstance.transform.translate(position);
-
-        PhysicsBody body = factory.createBody(scene.modelInstance, shape, mass, isStatic);
+    public GameObject spawnObject(boolean isStatic, String name, String proxyName, CollisionShapeType shapeType, boolean resetPosition, Vector3 position, float mass){
+        Scene scene = loadNode( name, resetPosition, position );
+        ModelInstance collisionInstance = scene.modelInstance;
+        if(proxyName != null) {
+            Scene proxyScene = loadNode( proxyName, resetPosition, position );
+            collisionInstance = proxyScene.modelInstance;
+        }
+        PhysicsBody body = factory.createBody(collisionInstance, shapeType, mass, isStatic);
         GameObject go = new GameObject(scene, body);
         gameObjects.add(go);
         isDirty = true;         // list of game objects has changed
         return go;
     }
+
+    private Scene loadNode( String nodeName, boolean resetPosition, Vector3 position ) {
+        Scene scene = new Scene(sceneAsset.scene, nodeName);
+        if(scene.modelInstance.nodes.size == 0)
+            throw new RuntimeException("Cannot find node in GLTF file: " + nodeName);
+        applyNodeTransform(resetPosition, scene.modelInstance, scene.modelInstance.nodes.first());         // incorporate nodes' transform into model instance transform
+        scene.modelInstance.transform.translate(position);
+        return scene;
+    }
+
+//    public GameObject spawnObject(boolean isStatic, String name, CollisionShapeType shape, boolean resetPosition, Vector3 position, float mass){
+//        Scene scene = new Scene(sceneAsset.scene, name);
+//        if(scene.modelInstance.nodes.size == 0)
+//            throw new RuntimeException("Cannot find node in GLTF file: " + name);
+//
+//        applyNodeTransform(resetPosition, scene.modelInstance, scene.modelInstance.nodes.first());         // incorporate nodes' transform into model instance transform
+//        scene.modelInstance.transform.translate(position);
+//
+//        PhysicsBody body = factory.createBody(scene.modelInstance, shape, mass, isStatic);
+//        GameObject go = new GameObject(scene, body);
+//        gameObjects.add(go);
+//        isDirty = true;         // list of game objects has changed
+//        return go;
+//    }
 
     private void applyNodeTransform(boolean resetPosition, ModelInstance modelInstance, Node node ){
         if(!resetPosition)
@@ -125,7 +148,7 @@ public class World implements Disposable {
         dir.set( playerController.getViewingDirection() );
         spawnPos.set(dir);
         spawnPos.add(player.getPosition()); // spawn from 1 unit in front of the player
-        GameObject ball = spawnObject(false, "ball", CollisionShapeType.SPHERE, true, spawnPos, Settings.ballMass );
+        GameObject ball = spawnObject(false, "ball", null, CollisionShapeType.SPHERE, true, spawnPos, Settings.ballMass );
         shootDirection.set(dir);        // shoot forward
         shootDirection.y += 0.5f;       // and slightly up
         shootDirection.scl(Settings.ballForce);   // scale for speed

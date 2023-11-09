@@ -35,26 +35,29 @@ public class PhysicsBody {
         DVector3C pos = geom.getPosition();
         position.x = (float) pos.get0();
         position.y = (float) pos.get2();        // note: swap Y and Z
-        position.z = (float) pos.get1();
+        position.z = -(float) pos.get1();
         return position;
     }
 
     public void setPosition( Vector3 pos ) {
-        geom.setPosition(pos.x, pos.z, pos.y);  // swap Y and Z
+        geom.setPosition(pos.x, -pos.z, pos.y);  // swap Y and Z
         DBody rigidBody = geom.getBody();
         if(rigidBody != null)
-            rigidBody.setPosition(pos.x, pos.z, pos.y);  // swap Y and Z
+            rigidBody.setPosition(pos.x, -pos.z, pos.y);  // swap Y and Z
     }
 
     public Quaternion getOrientation() {
         DQuaternionC odeQ = geom.getQuaternion();
-        // Convert from ODE to LibGDX
-        quaternion.set(-(float)odeQ.get1(), (float)odeQ.get3(), -(float)odeQ.get2(), (float) odeQ.get0());   // x,y,z,w
+        float ow = (float) odeQ.get0();
+        float ox = (float) odeQ.get1();
+        float oy = (float) odeQ.get2();
+        float oz = (float) odeQ.get3();
+        quaternion.set(ox, oz, -oy, ow);
         return quaternion;
     }
 
     public void setOrientation( Quaternion q ){
-        DQuaternion odeQ = new DQuaternion(q.w, -q.x, -q.z, q.y);       // convert to ODE quaternion
+        DQuaternion odeQ = new DQuaternion(q.w, q.x, -q.z, q.y);       // convert to ODE quaternion
         geom.setQuaternion(odeQ);
         DBody rigidBody = geom.getBody();
         if(rigidBody != null)
@@ -63,7 +66,7 @@ public class PhysicsBody {
 
     public void applyForce( Vector3 force ){
         DBody rigidBody = geom.getBody();
-        rigidBody.addForce(force.x, force.z, force.y);  // swap z & y
+        rigidBody.addForce(force.x, -force.z, force.y);  // swap z & y
     }
 
     public void render(ModelBatch batch) {
