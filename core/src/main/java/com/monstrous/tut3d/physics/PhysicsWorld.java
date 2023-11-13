@@ -3,7 +3,9 @@ package com.monstrous.tut3d.physics;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.antzGames.gdx.ode4j.ode.*;
+import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.Settings;
+import com.monstrous.tut3d.World;
 
 import static com.github.antzGames.gdx.ode4j.ode.OdeConstants.*;
 
@@ -15,8 +17,10 @@ public class PhysicsWorld implements Disposable {
     DWorld world;
     public DSpace space;
     private final DJointGroup contactGroup;
+    private final World gameWorld;
 
-    public PhysicsWorld() {
+    public PhysicsWorld(World gameWorld) {
+        this.gameWorld = gameWorld;
         OdeHelper.initODE2(0);
         Gdx.app.log("ODE version", OdeHelper.getVersion());
         Gdx.app.log("ODE config", OdeHelper.getConfiguration());
@@ -69,6 +73,7 @@ public class PhysicsWorld implements Disposable {
 
             int n = OdeHelper.collide(o1, o2, N, contacts.getGeomBuffer());
             if (n > 0) {
+                gameWorld.onCollision((GameObject)o1.getData(), (GameObject)o2.getData());        // callback to world
 
                 for (int i = 0; i < n; i++) {
                     DContact contact = contacts.get(i);

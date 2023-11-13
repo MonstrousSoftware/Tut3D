@@ -6,12 +6,14 @@ import net.mgsx.gltf.scene3d.scene.Scene;
 
 public class GameObject {
 
+    public final GameObjectType type;
     public final Scene scene;
     public final PhysicsBody body;
     public final Vector3 direction;
     public boolean visible;
 
-    public GameObject(Scene scene, PhysicsBody body) {
+    public GameObject(GameObjectType type, Scene scene, PhysicsBody body) {
+        this.type = type;
         this.scene = scene;
         this.body = body;
         body.geom.setData(this);            // the geom has user data to link back to GameObject for collision handling
