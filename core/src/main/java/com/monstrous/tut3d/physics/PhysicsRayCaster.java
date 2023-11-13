@@ -1,6 +1,5 @@
 package com.monstrous.tut3d.physics;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.antzGames.gdx.ode4j.math.DVector3;

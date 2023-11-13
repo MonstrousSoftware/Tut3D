@@ -112,9 +112,8 @@ public class PlayerController extends InputAdapter  {
         // reset velocities
         linearForce.set(0,0,0);
 
-        boolean isOnGround = rayCaster.isGrounded(player, player.getPosition(), 1.0f, groundNormal);
+        boolean isOnGround = rayCaster.isGrounded(player, player.getPosition(), Settings.groundRayLength, groundNormal);
         // disable gravity if player is on a slope
-
         if(isOnGround) {
             float dot = groundNormal.dot(Vector3.Y);
             player.body.geom.getBody().setGravityMode(dot >= 0.99f);
