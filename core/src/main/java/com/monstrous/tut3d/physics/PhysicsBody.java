@@ -69,6 +69,11 @@ public class PhysicsBody {
         rigidBody.addForce(force.x, -force.z, force.y);  // swap z & y
     }
 
+    public void applyTorque( Vector3 torque ){
+        DBody rigidBody = geom.getBody();
+        rigidBody.addTorque(torque.x, -torque.z, torque.y);  // swap z & y
+    }
+
     public void render(ModelBatch batch) {
         // move & orient debug modelInstance in line with geom
         debugInstance.transform.set(getPosition(), getOrientation());
@@ -86,11 +91,17 @@ public class PhysicsBody {
         batch.render(debugInstance);
     }
 
-    public void setPlayerCharacteristics() {
+    // used for player and enemy characters that have capsules for collision geometry
+    public void setCapsuleCharacteristics() {
         DBody rigidBody = geom.getBody();
         rigidBody.setDamping(Settings.playerLinearDamping, Settings.playerAngularDamping);
         rigidBody.setAutoDisableFlag(false);       // never allow player to get disabled
-        // keep capsule upright by not allowing rotations
-        rigidBody.setMaxAngularSpeed(0);
+        rigidBody.setMaxAngularSpeed(0);    // keep capsule upright by not allowing rotations
+    }
+
+    public void destroy() {
+        if(geom.getBody() != null)
+            geom.getBody().destroy();
+        geom.destroy();
     }
 }

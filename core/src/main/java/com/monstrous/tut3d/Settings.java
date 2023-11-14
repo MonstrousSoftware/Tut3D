@@ -28,5 +28,8 @@ public class Settings {
     static public float playerLinearDamping = 0.05f;
     static public float playerAngularDamping = 0.5f;
 
+    static public float panMass = 0.5f;
+    static public float panForce = 135f;
+
     static public final String GLTF_FILE = "models/step12.gltf";
 }

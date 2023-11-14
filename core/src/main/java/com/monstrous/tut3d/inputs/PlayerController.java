@@ -104,6 +104,9 @@ public class PlayerController extends InputAdapter  {
     }
 
     public void update (GameObject player, float deltaTime ) {
+        if(player.isDead())
+            return;
+
         // derive forward direction vector from viewing direction
         forwardDirection.set(viewingDirection);
         forwardDirection.y = 0;
