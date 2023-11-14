@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.ScreenAdapter;
+import com.monstrous.tut3d.gui.GUI;
 import com.monstrous.tut3d.views.GameView;
 import com.monstrous.tut3d.views.GridView;
 import com.monstrous.tut3d.views.PhysicsView;
@@ -14,12 +15,14 @@ public class GameScreen extends ScreenAdapter {
     private GridView gridView;
     private PhysicsView physicsView;
     private World world;
+    private GUI gui;
     private boolean debugRender = false;
 
     @Override
     public void show() {
 
         world = new World();
+        gui = new GUI(world, this);
         Populator.populate(world);
         gameView = new GameView(world);
         gridView = new GridView();
@@ -27,6 +30,7 @@ public class GameScreen extends ScreenAdapter {
 
         InputMultiplexer im = new InputMultiplexer();
         Gdx.input.setInputProcessor(im);
+        im.addProcessor(gui.stage);
         im.addProcessor(gameView.getCameraController());
         im.addProcessor(world.getPlayerController());
 
@@ -38,12 +42,17 @@ public class GameScreen extends ScreenAdapter {
         Gdx.input.setCatchKey(Input.Keys.F2, true);
     }
 
+    public void restart() {
+        Populator.populate(world);
+
+    }
+
     @Override
     public void render(float delta) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE))
             Gdx.app.exit();
         if (Gdx.input.isKeyJustPressed(Input.Keys.R))
-            Populator.populate(world);
+            restart();
         if (Gdx.input.isKeyJustPressed(Input.Keys.F))
             world.shootBall();
         if (Gdx.input.isKeyJustPressed(Input.Keys.F1))
@@ -56,11 +65,14 @@ public class GameScreen extends ScreenAdapter {
             gridView.render(gameView.getCamera());
             physicsView.render(gameView.getCamera());
         }
+        gui.showCrossHair( !gameView.inThirdPersonMode() );
+        gui.render(delta);
     }
 
     @Override
     public void resize(int width, int height) {
         gameView.resize(width, height);
+        gui.resize(width, height);
     }
 
 
@@ -74,6 +86,7 @@ public class GameScreen extends ScreenAdapter {
         gameView.dispose();
         gridView.dispose();
         physicsView.dispose();
+        gui.dispose();
         world.dispose();
     }
 }

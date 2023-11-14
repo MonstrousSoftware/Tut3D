@@ -119,14 +119,13 @@ public class World implements Disposable {
 
     public void update( float deltaTime ) {
 
-        if(stats.numEnemies > 0 || stats.numCoins > 0)
+        if(stats.numEnemies > 0 || stats.coinsCollected < stats.numCoins)
             stats.gameTime += deltaTime;
         else {
             if(!stats.levelComplete)
                 Main.assets.sounds.GAME_COMPLETED.play();
             stats.levelComplete = true;
         }
-        //Gdx.app.log(""+stats.gameTime, "Enemies:"+stats.numEnemies+" Coins:"+stats.coinsCollected+"/"+stats.numCoins+" health:"+(player.health*100));
         playerController.update(player, deltaTime);
         physicsWorld.update();
         syncToPhysics();
@@ -176,7 +175,6 @@ public class World implements Disposable {
         if(go1.type.isStatic || go2.type.isStatic)
             return;
 
-        Gdx.app.log("onCollision", go1.type.typeName+" x "+go2.type.typeName);
         handleCollision(go1, go2);
         handleCollision(go2, go1);
     }

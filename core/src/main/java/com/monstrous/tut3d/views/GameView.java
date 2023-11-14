@@ -95,6 +95,11 @@ public class GameView implements Disposable {
             if(world.getGameObject(i).visible)
                 sceneManager.addScene(scene, false);
         }
+        world.getPlayer().visible = inThirdPersonMode();
+    }
+
+    public boolean inThirdPersonMode() {
+        return camController.getThirdPersonMode();
     }
 
     public void render(float delta ) {
