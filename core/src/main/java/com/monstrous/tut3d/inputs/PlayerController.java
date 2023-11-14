@@ -120,10 +120,8 @@ public class PlayerController extends InputAdapter  {
         if(isOnGround) {
             float dot = groundNormal.dot(Vector3.Y);
             player.body.geom.getBody().setGravityMode(dot >= 0.99f);
-            //Gdx.app.log("isOnGround", player.getPosition().toString()+isOnGround+" N="+groundNormal.toString()+" is on slope: "+(dot<0.99f));
         } else {
             player.body.geom.getBody().setGravityMode(true);
-            //Gdx.app.log("isOnGround", ""+isOnGround);
         }
 
 

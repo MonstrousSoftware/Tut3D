@@ -9,7 +9,6 @@ import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.behaviours.CookBehaviour;
 import com.monstrous.tut3d.inputs.PlayerController;
 import com.monstrous.tut3d.physics.*;
-import net.mgsx.gltf.loaders.gltf.GLTFLoader;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
 
@@ -25,11 +24,10 @@ public class World implements Disposable {
     private final PlayerController playerController;
     private final PhysicsRayCaster rayCaster;
 
-    public World(String modelFileName) {
-
+    public World() {
         gameObjects = new Array<>();
         stats = new GameStats();
-        sceneAsset = new GLTFLoader().load(Gdx.files.internal(modelFileName));
+        sceneAsset = Main.assets.sceneAsset;
         for(Node node : sceneAsset.scene.model.nodes){  // print some debug info
             Gdx.app.log("Node ", node.id);
         }
@@ -120,7 +118,14 @@ public class World implements Disposable {
     }
 
     public void update( float deltaTime ) {
-        stats.gameTime += deltaTime;
+
+        if(stats.numEnemies > 0 || stats.numCoins > 0)
+            stats.gameTime += deltaTime;
+        else {
+            if(!stats.levelComplete)
+                Main.assets.sounds.GAME_COMPLETED.play();
+            stats.levelComplete = true;
+        }
         //Gdx.app.log(""+stats.gameTime, "Enemies:"+stats.numEnemies+" Coins:"+stats.coinsCollected+"/"+stats.numCoins+" health:"+(player.health*100));
         playerController.update(player, deltaTime);
         physicsWorld.update();
@@ -190,23 +195,29 @@ public class World implements Disposable {
     private void pickup(GameObject character, GameObject pickup){
 
         removeObject(pickup);
-        if(pickup.type == GameObjectType.TYPE_PICKUP_COIN)
+        if(pickup.type == GameObjectType.TYPE_PICKUP_COIN) {
             stats.coinsCollected++;
-        if(pickup.type == GameObjectType.TYPE_PICKUP_HEALTH)
+            Main.assets.sounds.COIN.play();
+        }
+        if(pickup.type == GameObjectType.TYPE_PICKUP_HEALTH) {
             character.health = Math.min(character.health + 0.5f, 1f);   // +50% health
+            Main.assets.sounds.UPGRADE.play();
+        }
     }
 
     private void bulletHit(GameObject character, GameObject bullet) {
         removeObject(bullet);
         character.health -= 0.25f;      // - 25% health
-        if(character.isDead())
+        Main.assets.sounds.HIT.play();
+        if(character.isDead()) {
             removeObject(character);
+            if (character.type.isPlayer)
+                Main.assets.sounds.GAME_OVER.play();
+        }
     }
 
     @Override
     public void dispose() {
-
-        sceneAsset.dispose();
         physicsWorld.dispose();
         rayCaster.dispose();
     }

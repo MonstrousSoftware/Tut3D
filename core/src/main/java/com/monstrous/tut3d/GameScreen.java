@@ -19,7 +19,7 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void show() {
 
-        world = new World(Settings.GLTF_FILE);
+        world = new World();
         Populator.populate(world);
         gameView = new GameView(world);
         gridView = new GridView();
