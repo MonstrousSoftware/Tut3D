@@ -22,7 +22,8 @@ public class World implements Disposable {
     private final PhysicsWorld physicsWorld;
     private final PhysicsBodyFactory factory;
     private final PlayerController playerController;
-    private final PhysicsRayCaster rayCaster;
+    public final PhysicsRayCaster rayCaster;
+    public final WeaponState weaponState;
 
     public World() {
         gameObjects = new Array<>();
@@ -35,7 +36,8 @@ public class World implements Disposable {
         physicsWorld = new PhysicsWorld(this);
         factory = new PhysicsBodyFactory(physicsWorld);
         rayCaster = new PhysicsRayCaster(physicsWorld);
-        playerController = new PlayerController(rayCaster);
+        playerController = new PlayerController(this);
+        weaponState = new WeaponState();
     }
 
     public boolean isDirty(){
@@ -46,6 +48,7 @@ public class World implements Disposable {
         physicsWorld.reset();
         playerController.reset();
         stats.reset();
+        weaponState.reset();
 
         gameObjects.clear();
         player = null;
@@ -126,6 +129,7 @@ public class World implements Disposable {
                 Main.assets.sounds.GAME_COMPLETED.play();
             stats.levelComplete = true;
         }
+        weaponState.update(deltaTime);
         playerController.update(player, deltaTime);
         physicsWorld.update();
         syncToPhysics();
@@ -152,23 +156,49 @@ public class World implements Disposable {
         }
     }
 
-    private final Vector3 dir = new Vector3();
-    private final Vector3 spawnPos = new Vector3();
-    private final Vector3 shootDirection = new Vector3();
 
-    public void shootBall() {
+    private final Vector3 spawnPos = new Vector3();
+    private final Vector3 shootForce = new Vector3();
+    private final Vector3 impulse = new Vector3();
+
+    // fire current weapon
+    public void fireWeapon(Vector3 viewingDirection,  PhysicsRayCaster.HitPoint hitPoint) {
         if(player.isDead())
             return;
-        dir.set( playerController.getViewingDirection() );
-        spawnPos.set(dir);
-        spawnPos.add(player.getPosition()); // spawn from 1 unit in front of the player
-        GameObject ball = spawnObject(GameObjectType.TYPE_FRIENDLY_BULLET, "ball", null, CollisionShapeType.SPHERE, true, spawnPos, Settings.ballMass );
-        shootDirection.set(dir);        // shoot forward
-        shootDirection.y += 0.5f;       // and slightly up
-        shootDirection.scl(Settings.ballForce);   // scale for speed
-        ball.body.geom.getBody().setDamping(0.0f, 0.0f);
-        ball.body.applyForce(shootDirection);
+        if(!weaponState.isWeaponReady())  // to give delay between shots
+            return;
+        weaponState.firing = true;    // set state to firing (triggers gun animation in GameScreen)
+
+        switch(weaponState.currentWeaponType) {
+            case BALL:
+                spawnPos.set(viewingDirection);
+                spawnPos.add(player.getPosition()); // spawn from 1 unit in front of the player
+                GameObject ball = spawnObject(GameObjectType.TYPE_FRIENDLY_BULLET, "ball", null, CollisionShapeType.SPHERE, true, spawnPos, Settings.ballMass );
+                shootForce.set(viewingDirection);        // shoot in viewing direction (can be up or down from player direction)
+                shootForce.scl(Settings.ballForce);   // scale for speed
+                ball.body.geom.getBody().setDamping(0.0f, 0.0f);
+                ball.body.applyForce(shootForce);
+                break;
+            case GUN:
+                Main.assets.sounds.GUN_SHOT.play();
+                if(hitPoint.hit) {
+                    GameObject victim = hitPoint.refObject;
+                    Gdx.app.log("gunshot hit", victim.scene.modelInstance.nodes.first().id);
+                    if(victim.type.isEnemy)
+                        bulletHit(victim);
+
+                    impulse.set(victim.getPosition()).sub(player.getPosition()).nor().scl(Settings.gunForce);
+                    if(victim.body.geom.getBody() != null ) {
+                        victim.body.geom.getBody().enable();
+                        victim.body.applyForceAtPos(impulse, hitPoint.worldContactPoint);
+                    }
+                }
+                break;
+        }
     }
+
+
+
 
     public void onCollision(GameObject go1, GameObject go2){
         // try either order
@@ -179,15 +209,19 @@ public class World implements Disposable {
         handleCollision(go2, go1);
     }
 
-    private void handleCollision(GameObject go1, GameObject go2){
-        if(go1.type.isPlayer && go2.type.canPickup){
+    private void handleCollision(GameObject go1, GameObject go2) {
+        if (go1.type.isPlayer && go2.type.canPickup) {
             pickup(go1, go2);
         }
-        if(go1.type.isPlayer && go2.type.isEnemyBullet)
-            bulletHit(go1, go2);
+        if (go1.type.isPlayer && go2.type.isEnemyBullet) {
+            removeObject(go2);
+            bulletHit(go1);
+        }
 
-        if(go1.type.isEnemy && go2.type.isFriendlyBullet)
-            bulletHit(go1, go2);
+        if(go1.type.isEnemy && go2.type.isFriendlyBullet) {
+            removeObject(go2);
+            bulletHit(go1);
+        }
     }
 
     private void pickup(GameObject character, GameObject pickup){
@@ -197,14 +231,18 @@ public class World implements Disposable {
             stats.coinsCollected++;
             Main.assets.sounds.COIN.play();
         }
-        if(pickup.type == GameObjectType.TYPE_PICKUP_HEALTH) {
+        else if(pickup.type == GameObjectType.TYPE_PICKUP_HEALTH) {
             character.health = Math.min(character.health + 0.5f, 1f);   // +50% health
+            Main.assets.sounds.UPGRADE.play();
+        }
+        else if(pickup.type == GameObjectType.TYPE_PICKUP_GUN) {
+            weaponState.haveGun = true;
+            weaponState.currentWeaponType = WeaponType.GUN;
             Main.assets.sounds.UPGRADE.play();
         }
     }
 
-    private void bulletHit(GameObject character, GameObject bullet) {
-        removeObject(bullet);
+    private void bulletHit(GameObject character) {
         character.health -= 0.25f;      // - 25% health
         Main.assets.sounds.HIT.play();
         if(character.isDead()) {

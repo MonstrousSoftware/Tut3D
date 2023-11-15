@@ -5,6 +5,7 @@ public class GameObjectType {
     public final static GameObjectType TYPE_PLAYER = new GameObjectType("player", false, true, false, false, false, false);
     public final static GameObjectType TYPE_PICKUP_COIN = new GameObjectType("coin", false, false, true, false , false, false);
     public final static GameObjectType TYPE_PICKUP_HEALTH = new GameObjectType("healthpack", false, false, true, false , false, false);
+    public final static GameObjectType TYPE_PICKUP_GUN = new GameObjectType("gun", false, false, true, false , false, false);
     public final static GameObjectType TYPE_DYNAMIC = new GameObjectType("dynamic", false, false, false, false, false, false);
     public final static GameObjectType TYPE_ENEMY = new GameObjectType("enemy", false, false, false, true, false, false);
     public final static GameObjectType TYPE_FRIENDLY_BULLET = new GameObjectType("bullet", false, false, false, false, true,false);

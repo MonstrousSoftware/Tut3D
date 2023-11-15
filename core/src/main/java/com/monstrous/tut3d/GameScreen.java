@@ -4,7 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.math.Vector3;
 import com.monstrous.tut3d.gui.GUI;
+import com.monstrous.tut3d.physics.CollisionShapeType;
 import com.monstrous.tut3d.views.GameView;
 import com.monstrous.tut3d.views.GridView;
 import com.monstrous.tut3d.views.PhysicsView;
@@ -13,10 +15,14 @@ public class GameScreen extends ScreenAdapter {
 
     private GameView gameView;
     private GridView gridView;
+    private GameView gunView;
     private PhysicsView physicsView;
     private World world;
+    private World gunWorld;
+    private GameObject gun;
     private GUI gui;
     private boolean debugRender = false;
+    private boolean thirdPersonView = false;
 
     @Override
     public void show() {
@@ -24,7 +30,9 @@ public class GameScreen extends ScreenAdapter {
         world = new World();
         gui = new GUI(world, this);
         Populator.populate(world);
-        gameView = new GameView(world);
+        gameView = new GameView(world,false, 0.1f, 300f, 1f);
+        gameView.getCameraController().setThirdPersonMode(thirdPersonView);
+        world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
         gridView = new GridView();
         physicsView = new PhysicsView(world);
 
@@ -40,11 +48,24 @@ public class GameScreen extends ScreenAdapter {
 
         Gdx.input.setCatchKey(Input.Keys.F1, true);
         Gdx.input.setCatchKey(Input.Keys.F2, true);
+
+        // load gun model
+        gunWorld = new World();
+        gunWorld.clear();
+        gun = gunWorld.spawnObject(GameObjectType.TYPE_STATIC, "GunArmature", null,
+            CollisionShapeType.BOX, true, new Vector3(0,0,0), 1f);
+        gun.scene.animationController.allowSameAnimation = true;
+        gun.scene.modelInstance.transform.setToScaling(Settings.gunScale, Settings.gunScale, Settings.gunScale);
+        gun.scene.modelInstance.transform.setTranslation(Settings.gunPosition);
+
+        // create an overlay view and add gun model
+        gunView = new GameView(gunWorld, true, 0.01f, 10f, 0.1f);
     }
+
 
     public void restart() {
         Populator.populate(world);
-
+        world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
     }
 
     @Override
@@ -53,10 +74,19 @@ public class GameScreen extends ScreenAdapter {
             Gdx.app.exit();
         if (Gdx.input.isKeyJustPressed(Input.Keys.R))
             restart();
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F))
-            world.shootBall();
         if (Gdx.input.isKeyJustPressed(Input.Keys.F1))
             debugRender = !debugRender;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F2) ) {
+            thirdPersonView = !gameView.getCameraController().getThirdPersonMode();
+            gameView.getCameraController().setThirdPersonMode(thirdPersonView);
+            world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
+            gameView.refresh();
+        }
+        if(world.weaponState.firing){
+            world.weaponState.firing = false;
+            if(world.weaponState.currentWeaponType == WeaponType.GUN && !thirdPersonView)
+                gun.scene.animationController.setAnimation("Fire", 1);   // run the fire weapon animation once
+        }
 
         world.update(delta);
 
@@ -65,6 +95,12 @@ public class GameScreen extends ScreenAdapter {
             gridView.render(gameView.getCamera());
             physicsView.render(gameView.getCamera());
         }
+
+        if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN) { // && !scopeView) {
+            //gunView.addHeadBob(delta, world.playerController.linearVelocity);
+            gunView.render(delta);
+        }
+
         gui.showCrossHair( !gameView.inThirdPersonMode() );
         gui.render(delta);
     }

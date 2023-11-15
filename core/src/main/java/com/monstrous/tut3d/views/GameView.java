@@ -1,13 +1,8 @@
 package com.monstrous.tut3d.views;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Cubemap;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.monstrous.tut3d.Settings;
 import com.monstrous.tut3d.World;
 import com.monstrous.tut3d.inputs.CameraController;
@@ -29,18 +24,26 @@ public class GameView implements Disposable {
     private final Cubemap environmentCubemap;
     private final Cubemap specularCubemap;
     private final Texture brdfLUT;
-    private final SceneSkybox skybox;
+    private SceneSkybox skybox;
     private final CameraController camController;
+    private final boolean isOverlay;
+    private float bobAngle;     // angle in the camera bob cycle (radians)
+    private float bobScale;     // scale factor for camera bobbing
 
-    public GameView(World world) {
+    // if the view is an overlay, we don't clear screen on render, only depth buffer
+    //
+    public GameView(World world, boolean overlay, float near, float far, float bobScale) {
         this.world = world;
+        this.isOverlay = overlay;
+        this.bobScale = bobScale;
+
         sceneManager = new SceneManager();
 
         cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
-        cam.position.set(10f, Settings.eyeHeight, 5f);
-        cam.lookAt(0,Settings.eyeHeight,0);
-        cam.near = 0.1f;
-        cam.far = 300f;
+        cam.position.set(0f, Settings.eyeHeight, 0f);
+        cam.lookAt(0,Settings.eyeHeight,10f);
+        cam.near = near;
+        cam.far = far;
         cam.update();
 
         sceneManager.setCamera(cam);
@@ -72,8 +75,10 @@ public class GameView implements Disposable {
         sceneManager.environment.set(new PBRFloatAttribute(PBRFloatAttribute.ShadowBias, 1f/512f)); // reduce shadow acne
 
         // setup skybox
-        skybox = new SceneSkybox(environmentCubemap);
-        sceneManager.setSkyBox(skybox);
+        if(!isOverlay) {
+            skybox = new SceneSkybox(environmentCubemap);
+            sceneManager.setSkyBox(skybox);
+        }
     }
 
 
@@ -95,7 +100,6 @@ public class GameView implements Disposable {
             if(world.getGameObject(i).visible)
                 sceneManager.addScene(scene, false);
         }
-        world.getPlayer().visible = inThirdPersonMode();
     }
 
     public boolean inThirdPersonMode() {
@@ -103,20 +107,14 @@ public class GameView implements Disposable {
     }
 
     public void render(float delta ) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F2)) {
-            boolean thirdPersonView = !camController.getThirdPersonMode();
-            camController.setThirdPersonMode(thirdPersonView);
-            world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
-            refresh();
-        }
-
-        camController.update(world.getPlayer().getPosition(), world.getPlayerController().getViewingDirection());
+        if(!isOverlay)
+            camController.update(world.getPlayer().getPosition(), world.getPlayerController().getViewingDirection());
         cam.update();
         if(world.isDirty())
             refresh();
         sceneManager.update(delta);
 
-        ScreenUtils.clear(Color.PURPLE, true);  // note clear color will be hidden by skybox anyway
+        Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);   // clear depth buffer only
         sceneManager.render();
     }
 
@@ -131,6 +129,7 @@ public class GameView implements Disposable {
         diffuseCubemap.dispose();
         specularCubemap.dispose();
         brdfLUT.dispose();
-        skybox.dispose();
+        if(!isOverlay)
+            skybox.dispose();
     }
 }

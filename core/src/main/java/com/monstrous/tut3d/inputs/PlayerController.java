@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.IntIntMap;
 import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.Settings;
+import com.monstrous.tut3d.World;
 import com.monstrous.tut3d.physics.PhysicsRayCaster;
 
 public class PlayerController extends InputAdapter  {
@@ -18,22 +19,24 @@ public class PlayerController extends InputAdapter  {
     public int turnRightKey = Input.Keys.E;
     public int jumpKey = Input.Keys.SPACE;
     public int runShiftKey = Input.Keys.SHIFT_LEFT;
+    public int switchWeaponKey = Input.Keys.TAB;
 
+    private final World world;
     private final IntIntMap keys = new IntIntMap();
     private final Vector3 linearForce;
     private final Vector3 forwardDirection;   // direction player is facing, move direction, in XZ plane
     private final Vector3 viewingDirection;   // look direction, is forwardDirection plus Y component
     private float mouseDeltaX;
     private float mouseDeltaY;
-    private final PhysicsRayCaster rayCaster;
     private final Vector3 groundNormal = new Vector3();
     private final Vector3 tmp = new Vector3();
     private final Vector3 tmp2 = new Vector3();
     private final Vector3 tmp3 = new Vector3();
+    private final PhysicsRayCaster.HitPoint hitPoint = new PhysicsRayCaster.HitPoint();
 
 
-    public PlayerController(PhysicsRayCaster rayCaster)  {
-        this.rayCaster = rayCaster;
+    public PlayerController(World world)  {
+        this.world = world;
         linearForce = new Vector3();
         forwardDirection = new Vector3();
         viewingDirection = new Vector3();
@@ -62,7 +65,18 @@ public class PlayerController extends InputAdapter  {
     @Override
     public boolean keyUp (int keycode) {
         keys.remove(keycode, 0);
+        if (keycode == switchWeaponKey)             // switch weapons on key release
+            world.weaponState.switchWeapon();
         return true;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if(button == Input.Buttons.LEFT) {
+            world.rayCaster.findTarget(world.getPlayer().getPosition(), viewingDirection, hitPoint);
+            world.fireWeapon(  viewingDirection, hitPoint );
+        }
+        return false;
     }
 
     @Override
@@ -115,7 +129,7 @@ public class PlayerController extends InputAdapter  {
         // reset velocities
         linearForce.set(0,0,0);
 
-        boolean isOnGround = rayCaster.isGrounded(player, player.getPosition(), Settings.groundRayLength, groundNormal);
+        boolean isOnGround = world.rayCaster.isGrounded(player, player.getPosition(), Settings.groundRayLength, groundNormal);
         // disable gravity if player is on a slope
         if(isOnGround) {
             float dot = groundNormal.dot(Vector3.Y);

@@ -69,6 +69,11 @@ public class PhysicsBody {
         rigidBody.addForce(force.x, -force.z, force.y);  // swap z & y
     }
 
+    public void applyForceAtPos( Vector3 force, Vector3 pos ){
+        DBody rigidBody = geom.getBody();
+        rigidBody.addForceAtPos(force.x, -force.z, force.y, pos.x, -pos.z, pos.y);  // swap z & y
+    }
+
     public void applyTorque( Vector3 torque ){
         DBody rigidBody = geom.getBody();
         rigidBody.addTorque(torque.x, -torque.z, torque.y);  // swap z & y

@@ -1,8 +1,10 @@
 package com.monstrous.tut3d;
 
 
+import com.badlogic.gdx.math.Vector3;
+
 public class Settings {
-    static public float eyeHeight = 1.5f;   // meters
+    static public float eyeHeight = 2.5f;   // meters
 
     static public float walkSpeed = 5f;    // m/s
     static public float runFactor = 3f;    // m/s
@@ -30,6 +32,10 @@ public class Settings {
 
     static public float panMass = 0.5f;
     static public float panForce = 135f;
+    static public float gunForce = 80f;
+
+    static public Vector3 gunPosition = new Vector3(-1.1f, 1.9f, 1.8f); // gun position in gun camera view
+    static public float gunScale = 3.0f;
 
     static public final String GLTF_FILE = "models/step12.gltf";
 }
