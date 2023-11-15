@@ -129,6 +129,7 @@ public class GameScreen extends ScreenAdapter {
     public void resize(int width, int height) {
         gameView.resize(width, height);
         gui.resize(width, height);
+        scopeOverlay.resize(width, height);
     }
 
 
