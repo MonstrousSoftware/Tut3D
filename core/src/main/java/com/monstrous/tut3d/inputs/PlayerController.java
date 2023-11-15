@@ -76,6 +76,23 @@ public class PlayerController extends InputAdapter  {
             world.rayCaster.findTarget(world.getPlayer().getPosition(), viewingDirection, hitPoint);
             world.fireWeapon(  viewingDirection, hitPoint );
         }
+        if(button == Input.Buttons.RIGHT )
+            world.weaponState.scopeMode = true;              // enter scope mode with RMB
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if(button == Input.Buttons.RIGHT)
+            world.weaponState.scopeMode = false;         // leave scope mode
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        // when in scoped mode, move slower
+        mouseDeltaX = -Gdx.input.getDeltaX() * Settings.degreesPerPixel*0.2f;
+        mouseDeltaY = -Gdx.input.getDeltaY() * Settings.degreesPerPixel*0.2f;
         return false;
     }
 

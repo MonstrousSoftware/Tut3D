@@ -17,12 +17,14 @@ public class GameScreen extends ScreenAdapter {
     private GridView gridView;
     private GameView gunView;
     private PhysicsView physicsView;
+    private ScopeOverlay scopeOverlay;
     private World world;
     private World gunWorld;
     private GameObject gun;
     private GUI gui;
     private boolean debugRender = false;
     private boolean thirdPersonView = false;
+    private boolean lookThroughScope = false;
 
     @Override
     public void show() {
@@ -35,6 +37,7 @@ public class GameScreen extends ScreenAdapter {
         world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
         gridView = new GridView();
         physicsView = new PhysicsView(world);
+        scopeOverlay = new ScopeOverlay();
 
         InputMultiplexer im = new InputMultiplexer();
         Gdx.input.setInputProcessor(im);
@@ -68,8 +71,23 @@ public class GameScreen extends ScreenAdapter {
         world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
     }
 
+    private void setScopeMode( boolean scopeView ){
+        // scope view is only activated if player is holding gun
+        // and we're in first person view
+        //
+        boolean sv = scopeView && !thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN;
+        if(sv == this.lookThroughScope) // no change
+            return;
+        this.lookThroughScope = sv;
+        if(sv)  // entering scope view
+            gameView.setFieldOfView(20f);        // very narrow field of view
+        else   // leaving scope view, back to normal view
+            gameView.setFieldOfView(67f);
+    }
+
     @Override
     public void render(float delta) {
+        setScopeMode(world.weaponState.scopeMode);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE))
             Gdx.app.exit();
         if (Gdx.input.isKeyJustPressed(Input.Keys.R))
@@ -84,8 +102,9 @@ public class GameScreen extends ScreenAdapter {
         }
         if(world.weaponState.firing){
             world.weaponState.firing = false;
-            if(world.weaponState.currentWeaponType == WeaponType.GUN && !thirdPersonView)
+            if(world.weaponState.currentWeaponType == WeaponType.GUN && !thirdPersonView && !lookThroughScope)
                 gun.scene.animationController.setAnimation("Fire", 1);   // run the fire weapon animation once
+            scopeOverlay.startRecoilEffect();
         }
 
         world.update(delta);
@@ -96,12 +115,13 @@ public class GameScreen extends ScreenAdapter {
             physicsView.render(gameView.getCamera());
         }
 
-        if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN) { // && !scopeView) {
+        if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN && !lookThroughScope) {
             //gunView.addHeadBob(delta, world.playerController.linearVelocity);
             gunView.render(delta);
         }
-
-        gui.showCrossHair( !gameView.inThirdPersonMode() );
+        if(lookThroughScope)
+            scopeOverlay.render(delta);
+        gui.showCrossHair( !thirdPersonView && !lookThroughScope );
         gui.render(delta);
     }
 
@@ -124,5 +144,6 @@ public class GameScreen extends ScreenAdapter {
         physicsView.dispose();
         gui.dispose();
         world.dispose();
+        scopeOverlay.dispose();
     }
 }

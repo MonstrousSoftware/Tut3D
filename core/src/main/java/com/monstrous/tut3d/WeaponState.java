@@ -7,7 +7,7 @@ public class WeaponState {
     public WeaponType currentWeaponType;
     public float fireTimer;   // timer between shots, <= 0 means ready to fire
     public boolean firing;
-
+    public boolean scopeMode;
 
     public WeaponState() {
         reset();
@@ -17,6 +17,7 @@ public class WeaponState {
         haveGun = false;
         currentWeaponType = WeaponType.BALL;
         fireTimer = 0;
+        scopeMode = false;
     }
 
     public void switchWeapon() {

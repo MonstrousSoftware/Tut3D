@@ -86,6 +86,11 @@ public class GameView implements Disposable {
         return cam;
     }
 
+    public void setFieldOfView( float fov ){
+        cam.fieldOfView = fov;
+        cam.update();
+    }
+
     public CameraController getCameraController() {
         return camController;
     }

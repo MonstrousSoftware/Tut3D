@@ -21,6 +21,8 @@ public class Populator {
         world.spawnObject(GameObjectType.TYPE_STATIC,"arch",  null, CollisionShapeType.MESH, false, Vector3.Zero, 1f);
 
         world.spawnObject(GameObjectType.TYPE_STATIC,"stairs", "stairsProxy",  CollisionShapeType.MESH, false, Vector3.Zero, 1f);
+        world.spawnObject(GameObjectType.TYPE_STATIC,"stairs.001", "stairsProxy.001",  CollisionShapeType.MESH, false, Vector3.Zero, 1f);
+        world.spawnObject(GameObjectType.TYPE_STATIC,"walkway", "walkway", CollisionShapeType.MESH, false, Vector3.Zero, 1f);
 
         world.spawnObject(GameObjectType.TYPE_STATIC,"ramp",  null, CollisionShapeType.MESH, false, Vector3.Zero, 1f);
 
@@ -34,6 +36,14 @@ public class Populator {
         world.spawnObject(GameObjectType.TYPE_PICKUP_COIN, "coin",  null, CollisionShapeType.BOX, true, new Vector3(-12, 1, 13), 1);
         world.spawnObject(GameObjectType.TYPE_PICKUP_HEALTH, "healthpack",null, CollisionShapeType.BOX, true, new Vector3(26, 0.1f, -26), 1);
         world.spawnObject(GameObjectType.TYPE_PICKUP_HEALTH, "healthpack",  null, CollisionShapeType.BOX, true, new Vector3(-26, 0.1f, 26), 1);
+
+        // place coins on the boxes
+        world.spawnObject(GameObjectType.TYPE_PICKUP_COIN, "coin", null, CollisionShapeType.BOX, true, new Vector3(26, 5, 15), 1);
+        world.spawnObject(GameObjectType.TYPE_PICKUP_COIN, "coin", null, CollisionShapeType.BOX, true, new Vector3(13, 5, 14.5f), 1);
+        world.spawnObject(GameObjectType.TYPE_PICKUP_COIN, "coin", null, CollisionShapeType.BOX, true, new Vector3(2.4f, 5, 14.7f), 1);
+        world.spawnObject(GameObjectType.TYPE_PICKUP_COIN, "coin", null, CollisionShapeType.BOX, true, new Vector3(13, 5, 0.5f), 1);
+        world.spawnObject(GameObjectType.TYPE_PICKUP_COIN, "coin", null, CollisionShapeType.BOX, true, new Vector3(-8, 5, -16), 1);
+
 
         world.spawnObject(GameObjectType.TYPE_PICKUP_GUN, "GunArmature",  null, CollisionShapeType.SPHERE, true, new Vector3(0,0.3f, 0), 5);
 
