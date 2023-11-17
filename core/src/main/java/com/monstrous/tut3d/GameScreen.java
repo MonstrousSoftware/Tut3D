@@ -56,7 +56,7 @@ public class GameScreen extends ScreenAdapter {
         gunWorld = new World();
         gunWorld.clear();
         gun = gunWorld.spawnObject(GameObjectType.TYPE_STATIC, "GunArmature", null,
-            CollisionShapeType.BOX, true, new Vector3(0,0,0), 1f);
+            CollisionShapeType.BOX, true, new Vector3(0,0,0));
         gun.scene.animationController.allowSameAnimation = true;
         gun.scene.modelInstance.transform.setToScaling(Settings.gunScale, Settings.gunScale, Settings.gunScale);
         gun.scene.modelInstance.transform.setTranslation(Settings.gunPosition);

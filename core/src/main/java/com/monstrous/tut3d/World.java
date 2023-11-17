@@ -75,14 +75,14 @@ public class World implements Disposable {
         return playerController;
     }
 
-    public GameObject spawnObject(GameObjectType type, String name, String proxyName, CollisionShapeType shapeType, boolean resetPosition, Vector3 position, float mass){
+    public GameObject spawnObject(GameObjectType type, String name, String proxyName, CollisionShapeType shapeType, boolean resetPosition, Vector3 position){
         Scene scene = loadNode( name, resetPosition, position );
         ModelInstance collisionInstance = scene.modelInstance;
         if(proxyName != null) {
             Scene proxyScene = loadNode( proxyName, resetPosition, position );
             collisionInstance = proxyScene.modelInstance;
         }
-        PhysicsBody body = factory.createBody(collisionInstance, shapeType, mass, type.isStatic);
+        PhysicsBody body = factory.createBody(collisionInstance, shapeType, type.isStatic);
         GameObject go = new GameObject(type, scene, body);
         gameObjects.add(go);
         isDirty = true;         // list of game objects has changed
@@ -133,8 +133,11 @@ public class World implements Disposable {
         playerController.update(player, deltaTime);
         physicsWorld.update();
         syncToPhysics();
-        for(GameObject go : gameObjects)
+        for(GameObject go : gameObjects) {
+            if(go.getPosition().y < -10)        // delete objects that fell off the map
+                removeObject(go);
             go.update(this, deltaTime);
+        }
     }
 
     private void syncToPhysics() {
@@ -173,7 +176,7 @@ public class World implements Disposable {
             case BALL:
                 spawnPos.set(viewingDirection);
                 spawnPos.add(player.getPosition()); // spawn from 1 unit in front of the player
-                GameObject ball = spawnObject(GameObjectType.TYPE_FRIENDLY_BULLET, "ball", null, CollisionShapeType.SPHERE, true, spawnPos, Settings.ballMass );
+                GameObject ball = spawnObject(GameObjectType.TYPE_FRIENDLY_BULLET, "ball", null, CollisionShapeType.SPHERE, true, spawnPos );
                 shootForce.set(viewingDirection);        // shoot in viewing direction (can be up or down from player direction)
                 shootForce.scl(Settings.ballForce);   // scale for speed
                 ball.body.geom.getBody().setDamping(0.0f, 0.0f);

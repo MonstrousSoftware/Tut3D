@@ -66,7 +66,7 @@ public class CookBehaviour extends Behaviour {
         spawnPos.nor().scl(1f);
         spawnPos.add(go.getPosition()); // spawn from 1 unit in front of the character
         spawnPos.y += 1f;
-        GameObject pan = world.spawnObject(GameObjectType.TYPE_ENEMY_BULLET, "pan", "panProxy", CollisionShapeType.MESH, true, spawnPos, Settings.panMass );
+        GameObject pan = world.spawnObject(GameObjectType.TYPE_ENEMY_BULLET, "pan", "panProxy", CollisionShapeType.MESH, true, spawnPos );
         shootDirection.set(direction);        // shoot forward
         shootDirection.y += 0.5f;       // and slightly up
         shootDirection.scl(Settings.panForce);   // scale for speed

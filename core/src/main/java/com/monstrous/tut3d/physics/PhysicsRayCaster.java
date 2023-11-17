@@ -22,7 +22,7 @@ public class PhysicsRayCaster implements Disposable {
     public boolean isGrounded(GameObject player, Vector3 playerPos, float rayLength, Vector3 groundNormal ) {
         this.player = player;
         groundRay.setLength(rayLength);
-        groundRay.set(playerPos.x, -playerPos.z, playerPos.y, 0, 0, -1); // swap Y & Z, point ray downwards
+        groundRay.set(playerPos.x, playerPos.y, playerPos.z, 0, -1, 0); // point ray downwards
         groundRay.setFirstContact(true);
         groundRay.setBackfaceCull(true);
 
@@ -53,7 +53,7 @@ public class PhysicsRayCaster implements Disposable {
                     return;
 
                 DVector3 normal = contacts.get(0).getContactGeom().normal;
-                ((Vector3)data).set((float) (sign*normal.get(0)), (float)(sign*normal.get(2)), -(float)(sign*normal.get(1)));	// swap Y&Z
+                ((Vector3)data).set((float) (sign*normal.get(0)), (float)(sign*normal.get(1)), (float)(sign*normal.get(2)));
             }
         }
     };
@@ -79,7 +79,7 @@ public class PhysicsRayCaster implements Disposable {
     //
     public boolean findTarget(Vector3 playerPos, Vector3 viewDir, HitPoint hitPoint) {
         shootRay.setLength(100);    // shooting distance
-        shootRay.set(playerPos.x, -playerPos.z, playerPos.y, viewDir.x, -viewDir.z, viewDir.y); // point ray in viewing direction, starting at player's centre
+        shootRay.set(playerPos.x, playerPos.y, playerPos.z, viewDir.x, viewDir.y, viewDir.z); // point ray in viewing direction, starting at player's centre
 
         // the following settings are only relevant to triMesh collisions which can be expensive
         // they do NOT mean only the first or closest geom is returned,
@@ -118,9 +118,9 @@ public class PhysicsRayCaster implements Disposable {
                     hitPoint.distance = (float)d;
                     hitPoint.refObject = go;
                     DVector3 normal = contacts.get(0).getContactGeom().normal;
-                    hitPoint.normal.set((float) normal.get(0),-(float) normal.get(2), (float) normal.get(1));
+                    hitPoint.normal.set((float) normal.get(0),(float) normal.get(1), (float) normal.get(2));
                     DVector3 pos = contacts.get(0).getContactGeom().pos;
-                    hitPoint.worldContactPoint.set((float) pos.get(0), -(float) pos.get(2), (float) pos.get(1));
+                    hitPoint.worldContactPoint.set((float) pos.get(0), (float) pos.get(1), (float) pos.get(2));
                 }
             }
         }

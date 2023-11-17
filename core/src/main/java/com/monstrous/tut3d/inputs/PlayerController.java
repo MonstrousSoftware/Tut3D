@@ -182,7 +182,7 @@ public class PlayerController extends InputAdapter  {
         if (isOnGround && keys.containsKey(jumpKey) )
             linearForce.y =  Settings.jumpForce;
 
-        linearForce.scl(80);
+        linearForce.scl(120);
         player.body.applyForce(linearForce);
         // note: as the player body is a capsule it is not necessary to rotate it
         // (and in fact it causes problems due to errors building up)

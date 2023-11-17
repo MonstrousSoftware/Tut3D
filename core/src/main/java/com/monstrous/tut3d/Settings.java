@@ -6,10 +6,10 @@ import com.badlogic.gdx.math.Vector3;
 public class Settings {
     static public float eyeHeight = 2.5f;   // meters
 
-    static public float walkSpeed = 5f;    // m/s
-    static public float runFactor = 3f;    // m/s
+    static public float walkSpeed = 10f;    // m/s
+    static public float runFactor = 2f;     // multiplier for walk speed
     static public float turnSpeed = 120f;   // degrees/s
-    static public float jumpForce = 10.0f;
+    static public float jumpForce = 5.0f;
     static public float groundRayLength = 1.2f;
 
 
@@ -23,16 +23,13 @@ public class Settings {
 
     static public final int shadowMapSize = 4096;
 
-    static public float ballMass = 0.2f;
-    static public float ballForce = 100f;
+    static public float ballForce = 20f;
 
-    static public float playerMass = 1.0f;
     static public float playerLinearDamping = 0.05f;
     static public float playerAngularDamping = 0.5f;
 
-    static public float panMass = 0.5f;
-    static public float panForce = 135f;
-    static public float gunForce = 80f;
+    static public float panForce = 23f;
+    static public float gunForce = 40f;
 
     static public Vector3 gunPosition = new Vector3(-1.1f, 1.9f, 1.8f); // gun position in gun camera view
     static public float gunScale = 3.0f;

@@ -1,5 +1,6 @@
 package com.monstrous.tut3d.physics;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
@@ -20,6 +21,9 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.github.antzGames.gdx.ode4j.math.DQuaternion;
+import com.github.antzGames.gdx.ode4j.math.DQuaternionC;
+import com.github.antzGames.gdx.ode4j.math.DVector3;
 import com.github.antzGames.gdx.ode4j.ode.*;
 
 
@@ -36,6 +40,7 @@ public class PhysicsBodyFactory implements Disposable {
     private final Material material;
     private final Array<Disposable> disposables;
 
+
     public PhysicsBodyFactory(PhysicsWorld physicsWorld) {
         this.physicsWorld = physicsWorld;
         massInfo = OdeHelper.createMass();
@@ -46,7 +51,7 @@ public class PhysicsBodyFactory implements Disposable {
         disposables = new Array<>();
     }
 
-    public PhysicsBody createBody( ModelInstance collisionInstance, CollisionShapeType shapeType, float mass, boolean isStatic) {
+    public PhysicsBody createBody( ModelInstance collisionInstance, CollisionShapeType shapeType, boolean isStatic) {
         BoundingBox bbox = new BoundingBox();
         Node node = collisionInstance.nodes.first();
         node.calculateBoundingBox(bbox, false); // bounding box without the transform
@@ -62,30 +67,35 @@ public class PhysicsBodyFactory implements Disposable {
 
         switch(shapeType) {
             case BOX:
-                geom = OdeHelper.createBox(physicsWorld.space, w, d, h);    // swap d & h
+                geom = OdeHelper.createBox(physicsWorld.space, w, h, d);
+                massInfo.setBox(1, w, h, d);
                 break;
             case SPHERE:
                 diameter = Math.max(Math.max(w, d), h);
                 radius = diameter/2f;
                 geom = OdeHelper.createSphere(physicsWorld.space, radius);
+                massInfo.setSphere(1, radius);
                 break;
             case CAPSULE:
                 diameter = Math.max(w, d);
                 radius = diameter/2f; // radius of the cap
                 len = h - 2*radius;     // height of the cylinder between the two end caps
                 geom = OdeHelper.createCapsule(physicsWorld.space, radius, len);
+                massInfo.setCapsule(1, 2, radius, len);
                 break;
             case CYLINDER:
                 diameter = Math.max(w, d);
                 radius = diameter/2f; // radius of the cap
                 len = h;     // height of the cylinder between the two end caps
                 geom = OdeHelper.createCylinder(physicsWorld.space, radius, len);
+                massInfo.setCylinder(1, 2, radius, len);
                 break;
             case MESH:
                 // create a TriMesh from the provided modelInstance
                 DTriMeshData triData = OdeHelper.createTriMeshData();
                 fillTriData(triData, collisionInstance);
                 geom = OdeHelper.createTriMesh(physicsWorld.space, triData, null, null, null);
+                massInfo.setBox(1, w, h, d);
                 break;
 
             default:
@@ -99,8 +109,6 @@ public class PhysicsBodyFactory implements Disposable {
         }
         else {
             DBody rigidBody = OdeHelper.createBody(physicsWorld.world);
-            massInfo.setBox(1, w, d, h);    // swap d & h
-            massInfo.setMass(mass);
             rigidBody.setMass(massInfo);
             rigidBody.enable();
             rigidBody.setAutoDisableDefaults();
@@ -110,6 +118,13 @@ public class PhysicsBodyFactory implements Disposable {
             geom.setBody(rigidBody);
             geom.setCategoryBits(CATEGORY_DYNAMIC);
             geom.setCollideBits(CATEGORY_DYNAMIC|CATEGORY_STATIC);
+
+            if(shapeType == CollisionShapeType.CYLINDER || shapeType == CollisionShapeType.CAPSULE) {
+                // rotate geom 90 degrees around X because ODE geom cylinders and capsules shapes are created using Z as long axis
+                // and we want the shape to be oriented along the Y axis which is up.
+                DQuaternion Q = DQuaternion.fromEulerDegrees(90, 0, 0);     // rotate 90 degrees around X
+                geom.setOffsetQuaternion(Q);    // set standard rotation from rigid body to geom
+            }
         }
 
 
@@ -199,9 +214,10 @@ public class PhysicsBodyFactory implements Disposable {
         int[] indices = new int[numIndices];
 
         for(int v = 0; v < numVertices; v++) {
-            vertices[3*v] = origVertices[stride*v+posOffset];        // X := x
-            vertices[3*v+1] = -origVertices[stride*v+2+posOffset];   // Y := -z
-            vertices[3*v+2] = origVertices[stride*v+1+posOffset];    // Z := y
+            // x, y, z
+            vertices[3*v] = origVertices[stride*v+posOffset];
+            vertices[3*v+1] = origVertices[stride*v+1+posOffset];
+            vertices[3*v+2] = origVertices[stride*v+2+posOffset];
         }
         for(int i = 0; i < numIndices; i++)         // convert shorts to ints
             indices[i] = origIndices[i];

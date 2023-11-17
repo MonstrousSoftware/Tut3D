@@ -37,9 +37,9 @@ public class PhysicsWorld implements Disposable {
             space.destroy();
 
         world = OdeHelper.createWorld();
-        space = OdeHelper.createSapSpace( null, DSapSpace.AXES.XYZ );
+        space = OdeHelper.createSapSpace( null, DSapSpace.AXES.XZY );
 
-        world.setGravity (0, 0, Settings.gravity);  // Z is up-axis in ODE
+        world.setGravity (0,  Settings.gravity, 0);
         world.setCFM (1e-5);
         world.setERP (0.4);
         world.setQuickStepNumIterations (40);
