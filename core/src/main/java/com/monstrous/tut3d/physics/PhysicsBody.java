@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.github.antzGames.gdx.ode4j.math.DQuaternion;
 import com.github.antzGames.gdx.ode4j.math.DQuaternionC;
+import com.github.antzGames.gdx.ode4j.math.DVector3;
 import com.github.antzGames.gdx.ode4j.math.DVector3C;
 import com.github.antzGames.gdx.ode4j.ode.DBody;
 import com.github.antzGames.gdx.ode4j.ode.DGeom;
@@ -17,11 +18,13 @@ public class PhysicsBody {
     private final Quaternion quaternion;          // for convenience, matches geom.getQuaternion() but converted to LibGDX Quaternion
     public final ModelInstance debugInstance;    // visualisation of collision shape for debug view
     private final DQuaternion tmpQ;
+    private final Vector3 linearVelocity;
 
     public PhysicsBody(DGeom geom, ModelInstance debugInstance) {
         this.geom = geom;
         this.debugInstance = debugInstance;
         position = new Vector3();
+        linearVelocity = new Vector3();
         quaternion = new Quaternion();
         tmpQ = new DQuaternion();
     }
@@ -83,6 +86,16 @@ public class PhysicsBody {
     public void applyTorque( Vector3 torque ){
         DBody rigidBody = geom.getBody();
         rigidBody.addTorque(torque.x, torque.y, torque.z);
+    }
+
+    public Vector3 getVelocity() {
+        if(geom.getBody() == null)
+            linearVelocity.set(Vector3.Zero);
+        else {
+            DVector3C v = geom.getBody().getLinearVel();
+            linearVelocity.set((float) v.get0(), (float) v.get1(), (float) v.get2());
+        }
+        return linearVelocity;
     }
 
     // used for player and enemy characters that have capsules for collision geometry

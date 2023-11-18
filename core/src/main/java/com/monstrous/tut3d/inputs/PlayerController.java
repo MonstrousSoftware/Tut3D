@@ -24,7 +24,7 @@ public class PlayerController extends InputAdapter  {
 
     private final World world;
     private final IntIntMap keys = new IntIntMap();
-    private final Vector3 linearForce;
+    public final Vector3 linearForce;
     private final Vector3 forwardDirection;   // direction player is facing, move direction, in XZ plane
     private final Vector3 viewingDirection;   // look direction, is forwardDirection plus Y component
     private float mouseDeltaX;

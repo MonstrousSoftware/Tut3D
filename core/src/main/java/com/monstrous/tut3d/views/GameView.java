@@ -2,6 +2,8 @@ package com.monstrous.tut3d.views;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.Settings;
 import com.monstrous.tut3d.World;
@@ -28,7 +30,7 @@ public class GameView implements Disposable {
     private final CameraController camController;
     private final boolean isOverlay;
     private float bobAngle;     // angle in the camera bob cycle (radians)
-    private float bobScale;     // scale factor for camera bobbing
+    private final float bobScale;     // scale factor for camera bobbing
 
     // if the view is an overlay, we don't clear screen on render, only depth buffer
     //
@@ -111,9 +113,10 @@ public class GameView implements Disposable {
         return camController.getThirdPersonMode();
     }
 
-    public void render(float delta ) {
+    public void render(float delta, float speed ) {
         if(!isOverlay)
             camController.update(world.getPlayer().getPosition(), world.getPlayerController().getViewingDirection());
+        addHeadBob(delta, speed);
         cam.update();
         if(world.isDirty())
             refresh();
@@ -123,9 +126,19 @@ public class GameView implements Disposable {
         sceneManager.render();
     }
 
+    private void addHeadBob(float deltaTime, float speed ) {
+        if( speed > 0.1f ) {
+            bobAngle += speed * deltaTime * Math.PI / Settings.headBobDuration;
+            // move the head up and down in a sine wave
+            cam.position.y +=  bobScale *  Settings.headBobHeight * (float)Math.sin(bobAngle);
+        }
+    }
+
     public void resize(int width, int height){
         sceneManager.updateViewport(width, height);
     }
+
+
 
     @Override
     public void dispose() {

@@ -19,7 +19,7 @@ public class Settings {
     static public boolean invertLook = false;
     static public boolean freeLook = true;
     static public float headBobDuration = 0.6f; // s
-    static public float headBobHeight = 0.04f;  // m
+    static public float headBobHeight = 0.03f;  // m
     static public float degreesPerPixel = 0.1f; // mouse sensitivity
 
     static public float gravity = -9.8f; // meters / s^2

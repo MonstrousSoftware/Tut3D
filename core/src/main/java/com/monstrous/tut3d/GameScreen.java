@@ -72,7 +72,7 @@ public class GameScreen extends ScreenAdapter {
         gun.scene.modelInstance.transform.setTranslation(Settings.gunPosition);
 
         // create an overlay view and add gun model
-        gunView = new GameView(gunWorld, true, 0.01f, 10f, 0.1f);
+        gunView = new GameView(gunWorld, true, 0.01f, 5f, 0.2f);
     }
 
 
@@ -113,6 +113,7 @@ public class GameScreen extends ScreenAdapter {
             debugRender = !debugRender;
         if (Gdx.input.isKeyJustPressed(Input.Keys.F2) )
             toggleViewMode();
+
         if(world.weaponState.firing){
             world.weaponState.firing = false;
             if(world.weaponState.currentWeaponType == WeaponType.GUN && !thirdPersonView && !lookThroughScope)
@@ -122,15 +123,15 @@ public class GameScreen extends ScreenAdapter {
 
         world.update(delta);
 
-        gameView.render(delta);
+        float moveSpeed = world.getPlayer().body.getVelocity().len();
+        gameView.render(delta, moveSpeed);
         if(debugRender) {
             gridView.render(gameView.getCamera());
             physicsView.render(gameView.getCamera());
         }
 
         if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN && !lookThroughScope) {
-            //gunView.addHeadBob(delta, world.playerController.linearVelocity);
-            gunView.render(delta);
+            gunView.render(delta, moveSpeed);
         }
         if(lookThroughScope)
             scopeOverlay.render(delta);
