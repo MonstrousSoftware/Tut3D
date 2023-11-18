@@ -40,7 +40,7 @@ public class CookBehaviour extends Behaviour {
         targetDirection.nor();      // make unit vector
         direction.set(targetDirection);
         if(distance > 5f)   // move unless quite close
-            go.body.applyForce(targetDirection.scl(3f));
+            go.body.applyForce(targetDirection.scl(1.5f));
 
 
         // rotate to follow player

@@ -155,12 +155,16 @@ public class GUI implements Disposable {
             restartButton.setVisible(true);
             Gdx.input.setCursorCatched(false);
         }
-
-        if(world.getPlayer().isDead()) {
+        else  if(world.getPlayer().isDead()) {
             gameOverLabel.setText("GAME OVER");
             gameOverLabel.setVisible(true);
             restartButton.setVisible(true);
             Gdx.input.setCursorCatched(false);
+        }
+        else {
+            gameOverLabel.setVisible(false);
+            restartButton.setVisible(false);
+            Gdx.input.setCursorCatched(true);
         }
     }
 

@@ -29,9 +29,9 @@ public class World implements Disposable {
         gameObjects = new Array<>();
         stats = new GameStats();
         sceneAsset = Main.assets.sceneAsset;
-        for(Node node : sceneAsset.scene.model.nodes){  // print some debug info
-            Gdx.app.log("Node ", node.id);
-        }
+//        for(Node node : sceneAsset.scene.model.nodes){  // print some debug info
+//            Gdx.app.log("Node ", node.id);
+//        }
         isDirty = true;
         physicsWorld = new PhysicsWorld(this);
         factory = new PhysicsBodyFactory(physicsWorld);

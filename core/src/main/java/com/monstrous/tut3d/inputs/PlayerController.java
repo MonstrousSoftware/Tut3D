@@ -3,6 +3,7 @@ package com.monstrous.tut3d.inputs;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.IntIntMap;
 import com.monstrous.tut3d.GameObject;
@@ -33,6 +34,10 @@ public class PlayerController extends InputAdapter  {
     private final Vector3 tmp2 = new Vector3();
     private final Vector3 tmp3 = new Vector3();
     private final PhysicsRayCaster.HitPoint hitPoint = new PhysicsRayCaster.HitPoint();
+    private final Vector2 stickMove = new Vector2();
+    private final Vector2 stickLook = new Vector2();
+    private boolean isRunning;
+    private float stickViewAngle; // angle up or down
 
 
     public PlayerController(World world)  {
@@ -72,19 +77,17 @@ public class PlayerController extends InputAdapter  {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if(button == Input.Buttons.LEFT) {
-            world.rayCaster.findTarget(world.getPlayer().getPosition(), viewingDirection, hitPoint);
-            world.fireWeapon(  viewingDirection, hitPoint );
-        }
+        if(button == Input.Buttons.LEFT)
+            fireWeapon();
         if(button == Input.Buttons.RIGHT )
-            world.weaponState.scopeMode = true;              // enter scope mode with RMB
+            setScopeMode(true);              // enter scope mode with RMB
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         if(button == Input.Buttons.RIGHT)
-            world.weaponState.scopeMode = false;         // leave scope mode
+            setScopeMode(false);         // leave scope mode
         return false;
     }
 
@@ -104,6 +107,19 @@ public class PlayerController extends InputAdapter  {
         mouseDeltaX = -Gdx.input.getDeltaX() * Settings.degreesPerPixel;
         mouseDeltaY = -Gdx.input.getDeltaY() * Settings.degreesPerPixel;
         return true;
+    }
+
+    public void setScopeMode(boolean mode){
+        world.weaponState.scopeMode = mode;
+    }
+
+    public void fireWeapon() {
+        world.rayCaster.findTarget(world.getPlayer().getPosition(), viewingDirection, hitPoint);
+        world.fireWeapon(  viewingDirection, hitPoint );
+    }
+
+    public void setRunning( boolean mode ){
+        isRunning = mode;
     }
 
     private void rotateView( float deltaX, float deltaY ) {
@@ -155,15 +171,34 @@ public class PlayerController extends InputAdapter  {
             player.body.geom.getBody().setGravityMode(true);
         }
 
+        if( keys.containsKey(runShiftKey))
+            isRunning = true;
 
         float moveSpeed = Settings.walkSpeed;
-        if(keys.containsKey(runShiftKey))
+        if(isRunning)
             moveSpeed *= Settings.runFactor;
 
         // mouse to move view direction
         rotateView(mouseDeltaX*deltaTime*Settings.turnSpeed, mouseDeltaY*deltaTime*Settings.turnSpeed );
         mouseDeltaX = 0;
         mouseDeltaY = 0;
+
+        // controller stick inputs
+        moveForward(stickMove.y*deltaTime * moveSpeed);
+        strafe(stickMove.x * deltaTime * Settings.walkSpeed);
+        float delta = 0;
+        float speedFactor;
+        if(world.weaponState.scopeMode) {
+            speedFactor = 0.2f;
+            delta = (stickLook.y * 30f );
+        }
+        else {
+            speedFactor = 1f;
+            delta = (stickLook.y * 90f - stickViewAngle);
+        }
+        delta *= deltaTime*Settings.verticalReadjustSpeed*speedFactor;
+        stickViewAngle += delta;
+        rotateView(stickLook.x * deltaTime * Settings.turnSpeed*speedFactor,  delta );
 
         // note: most of the following is only valid when on ground, but we leave it to allow some fun cheating
         if (keys.containsKey(forwardKey))
@@ -190,4 +225,19 @@ public class PlayerController extends InputAdapter  {
     }
 
 
+    public void stickMoveX(float value){
+        stickMove.x = value;
+    }
+
+    public void stickMoveY(float value){
+        stickMove.y = value;
+    }
+
+    public void stickLookX(float value){
+        stickLook.x = value;
+    }
+
+    public void stickLookY(float value){
+        stickLook.y = value;
+    }
 }

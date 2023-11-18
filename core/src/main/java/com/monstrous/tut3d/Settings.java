@@ -4,6 +4,9 @@ package com.monstrous.tut3d;
 import com.badlogic.gdx.math.Vector3;
 
 public class Settings {
+    static public boolean supportControllers = true;       // disable in case it causes issues
+    static public float verticalReadjustSpeed = 4f;
+
     static public float eyeHeight = 2.5f;   // meters
 
     static public float walkSpeed = 10f;    // m/s

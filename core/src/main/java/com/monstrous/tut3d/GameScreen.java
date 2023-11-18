@@ -4,8 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.math.Vector3;
 import com.monstrous.tut3d.gui.GUI;
+import com.monstrous.tut3d.inputs.MyControllerAdapter;
 import com.monstrous.tut3d.physics.CollisionShapeType;
 import com.monstrous.tut3d.views.GameView;
 import com.monstrous.tut3d.views.GridView;
@@ -44,6 +46,14 @@ public class GameScreen extends ScreenAdapter {
         im.addProcessor(gui.stage);
         im.addProcessor(gameView.getCameraController());
         im.addProcessor(world.getPlayerController());
+
+        if (Settings.supportControllers &&  Controllers.getCurrent() != null) {
+            MyControllerAdapter controllerAdapter = new MyControllerAdapter(world.getPlayerController(), this);
+            Gdx.app.log("Controller enabled", Controllers.getCurrent().getName());
+            Controllers.addListener(controllerAdapter);
+        }
+        else
+            Gdx.app.log("No Controller enabled", "");
 
         // hide the mouse cursor and fix it to screen centre, so it doesn't go out the window canvas
         Gdx.input.setCursorCatched(true);
@@ -85,6 +95,13 @@ public class GameScreen extends ScreenAdapter {
             gameView.setFieldOfView(67f);
     }
 
+    public void toggleViewMode() {
+        thirdPersonView = !gameView.getCameraController().getThirdPersonMode();
+        gameView.getCameraController().setThirdPersonMode(thirdPersonView);
+        world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
+        gameView.refresh();
+    }
+
     @Override
     public void render(float delta) {
         setScopeMode(world.weaponState.scopeMode);
@@ -94,12 +111,8 @@ public class GameScreen extends ScreenAdapter {
             restart();
         if (Gdx.input.isKeyJustPressed(Input.Keys.F1))
             debugRender = !debugRender;
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F2) ) {
-            thirdPersonView = !gameView.getCameraController().getThirdPersonMode();
-            gameView.getCameraController().setThirdPersonMode(thirdPersonView);
-            world.getPlayer().visible = thirdPersonView;            // hide player mesh in first person
-            gameView.refresh();
-        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F2) )
+            toggleViewMode();
         if(world.weaponState.firing){
             world.weaponState.firing = false;
             if(world.weaponState.currentWeaponType == WeaponType.GUN && !thirdPersonView && !lookThroughScope)

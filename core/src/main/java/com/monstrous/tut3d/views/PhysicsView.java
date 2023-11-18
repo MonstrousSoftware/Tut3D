@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.World;
@@ -36,7 +35,7 @@ public class PhysicsView implements Disposable {
         modelBatch.end();
     }
 
-    public void renderCollisionShape(PhysicsBody body) {
+    private void renderCollisionShape(PhysicsBody body) {
         // move & orient debug modelInstance in line with geom
         body.debugInstance.transform.set(body.getPosition(), body.getBodyOrientation());
 
