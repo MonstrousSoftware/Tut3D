@@ -27,6 +27,7 @@ public class GameScreen extends ScreenAdapter {
     private boolean debugRender = false;
     private boolean thirdPersonView = false;
     private boolean lookThroughScope = false;
+    private int windowedWidth, windowedHeight;
 
     @Override
     public void show() {
@@ -61,6 +62,7 @@ public class GameScreen extends ScreenAdapter {
 
         Gdx.input.setCatchKey(Input.Keys.F1, true);
         Gdx.input.setCatchKey(Input.Keys.F2, true);
+        Gdx.input.setCatchKey(Input.Keys.F11, true);
 
         // load gun model
         gunWorld = new World();
@@ -102,6 +104,18 @@ public class GameScreen extends ScreenAdapter {
         gameView.refresh();
     }
 
+    private void toggleFullScreen() {        // toggle full screen / windowed screen
+        if (!Gdx.graphics.isFullscreen()) {
+            windowedWidth = Gdx.graphics.getWidth();        // remember current width & height
+            windowedHeight = Gdx.graphics.getHeight();
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+            resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        } else {
+            Gdx.graphics.setWindowedMode(windowedWidth, windowedHeight);
+            resize(windowedWidth, windowedHeight);
+        }
+    }
+
     @Override
     public void render(float delta) {
         setScopeMode(world.weaponState.scopeMode);
@@ -113,6 +127,8 @@ public class GameScreen extends ScreenAdapter {
             debugRender = !debugRender;
         if (Gdx.input.isKeyJustPressed(Input.Keys.F2) )
             toggleViewMode();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F11))
+            toggleFullScreen();
 
         if(world.weaponState.firing){
             world.weaponState.firing = false;
