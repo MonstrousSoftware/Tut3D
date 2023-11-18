@@ -18,7 +18,6 @@ public class World implements Disposable {
     private GameObject player;
     public GameStats stats;
     private final SceneAsset sceneAsset;
-    private boolean isDirty;
     private final PhysicsWorld physicsWorld;
     private final PhysicsBodyFactory factory;
     private final PlayerController playerController;
@@ -32,16 +31,11 @@ public class World implements Disposable {
 //        for(Node node : sceneAsset.scene.model.nodes){  // print some debug info
 //            Gdx.app.log("Node ", node.id);
 //        }
-        isDirty = true;
         physicsWorld = new PhysicsWorld(this);
         factory = new PhysicsBodyFactory(physicsWorld);
         rayCaster = new PhysicsRayCaster(physicsWorld);
         playerController = new PlayerController(this);
         weaponState = new WeaponState();
-    }
-
-    public boolean isDirty(){
-        return isDirty;
     }
 
     public void clear() {
@@ -52,7 +46,6 @@ public class World implements Disposable {
 
         gameObjects.clear();
         player = null;
-        isDirty = true;
     }
     public int getNumGameObjects() {
         return gameObjects.size;
@@ -85,7 +78,6 @@ public class World implements Disposable {
         PhysicsBody body = factory.createBody(collisionInstance, shapeType, type.isStatic);
         GameObject go = new GameObject(type, scene, body);
         gameObjects.add(go);
-        isDirty = true;         // list of game objects has changed
         if(go.type == GameObjectType.TYPE_ENEMY)
             stats.numEnemies++;
         if(go.type == GameObjectType.TYPE_PICKUP_COIN)
@@ -117,11 +109,9 @@ public class World implements Disposable {
             stats.numEnemies--;
         gameObjects.removeValue(gameObject, true);
         gameObject.dispose();
-        isDirty = true;     // list of game objects has changed
     }
 
     public void update( float deltaTime ) {
-
         if(stats.numEnemies > 0 || stats.coinsCollected < stats.numCoins)
             stats.gameTime += deltaTime;
         else {

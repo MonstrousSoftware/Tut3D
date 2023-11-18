@@ -2,8 +2,6 @@ package com.monstrous.tut3d.views;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.Settings;
 import com.monstrous.tut3d.World;
@@ -97,6 +95,7 @@ public class GameView implements Disposable {
         return camController;
     }
 
+
     public void refresh() {
         sceneManager.getRenderableProviders().clear();        // remove all scenes
 
@@ -104,7 +103,7 @@ public class GameView implements Disposable {
         int num = world.getNumGameObjects();
         for(int i = 0; i < num; i++){
             Scene scene = world.getGameObject(i).scene;
-            if(world.getGameObject(i).visible)
+            if (world.getGameObject(i).visible)
                 sceneManager.addScene(scene, false);
         }
     }
@@ -118,8 +117,7 @@ public class GameView implements Disposable {
             camController.update(world.getPlayer().getPosition(), world.getPlayerController().getViewingDirection());
         addHeadBob(delta, speed);
         cam.update();
-        if(world.isDirty())
-            refresh();
+        refresh();
         sceneManager.update(delta);
 
         Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);   // clear depth buffer only
