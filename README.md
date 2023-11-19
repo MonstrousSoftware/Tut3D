@@ -4,7 +4,7 @@ A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://git
 
 ![screenshot](screenshot.png)
 
-This is the code repository for the [LibGDX 3D Tutorial](https://github.com/MonstrousSoftware/Tutorial3D).
+This is the code repository for the [LibGDX 3D Tutorial](https://monstroussoftware.github.io/2023/11/01/Tutorial-3D-step1.html).
 Use the git tags to get the version corresponding to each step of the tutorial.
 
 You can try out this game on [itch.io](https://monstrous-software.itch.io/fps-demo).
