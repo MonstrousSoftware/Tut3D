@@ -90,9 +90,9 @@ public class World implements Disposable {
         PhysicsBody body = null;
         if(type == GameObjectType.TYPE_NAVMESH){
             navMesh = new NavMesh(scene.modelInstance);
+            return null;
         }
-        else
-            body = factory.createBody(collisionInstance, shapeType, type.isStatic);
+        body = factory.createBody(collisionInstance, shapeType, type.isStatic);
         GameObject go = new GameObject(type, scene, body);
         gameObjects.add(go);
         if(go.type == GameObjectType.TYPE_ENEMY)
