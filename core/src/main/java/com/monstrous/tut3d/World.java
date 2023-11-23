@@ -19,7 +19,6 @@ public class World implements Disposable {
 
     private final Array<GameObject> gameObjects;
     private GameObject player;
-    public GameObject theCook;  // TMP
     public GameStats stats;
     private final SceneAsset sceneAsset;
     private final PhysicsWorld physicsWorld;
@@ -29,9 +28,6 @@ public class World implements Disposable {
     public final WeaponState weaponState;
     public NavMesh navMesh;
     public NavNode navNode;
-    public NavNode targetNavNode;
-    public Array<NavNode> path;
-    public Vector3 targetPosition;
     private int prevNode = -1;
 
     public World() {
@@ -74,6 +70,7 @@ public class World implements Disposable {
     public void setPlayer( GameObject player ){
         this.player = player;
         player.body.setCapsuleCharacteristics();
+        navMesh.updateDistances(player.getPosition());
     }
 
     public PlayerController getPlayerController() {
@@ -99,22 +96,7 @@ public class World implements Disposable {
             stats.numEnemies++;
         if(go.type == GameObjectType.TYPE_PICKUP_COIN)
            stats.numCoins++;
-        if(go.type == GameObjectType.TYPE_PICKUP_COIN) {      // TMP
-            targetNavNode = navMesh.findNode(go.getPosition(),  1f);
-            Gdx.app.log("target is in nav node:", ""+targetNavNode.id+" pos:"+ go.getPosition().toString());
-            targetPosition = new Vector3(go.getPosition());
-        }
 
-        if(go.type == GameObjectType.TYPE_PLAYER) {      // TMP
-            navNode = navMesh.findNode( go.getPosition(), Settings.groundRayLength );
-            if(navNode == null)
-                Gdx.app.error("** NO NAV NODE player is in nav node:", " pos:"+ go.getPosition().toString());
-            else
-                Gdx.app.log("player is in nav node:", ""+navNode.id+" pos:"+ go.getPosition().toString());
-        }
-        if(go.type == GameObjectType.TYPE_ENEMY) {      // TMP
-            theCook = go;
-        }
         return go;
     }
 
@@ -164,17 +146,14 @@ public class World implements Disposable {
             go.update(this, deltaTime);
         }
 
-
         navNode = navMesh.findNode( player.getPosition(), Settings.groundRayLength );
-        if(navNode == null)
-            Gdx.app.error("** NO NAV NODE player is in nav node:", " pos:"+ player.getPosition().toString());
-        else if (navNode.id != prevNode) {
-            Gdx.app.log("player is in nav node:", "" + navNode.id + " pos:" + player.getPosition().toString());
+//        if(navNode == null)
+//            Gdx.app.error("player outside the nav mesh:", " pos:"+ player.getPosition().toString());
+         if (navNode != null && navNode.id != prevNode) {
+            Gdx.app.log("player moves to nav node:", "" + navNode.id + " pos:" + player.getPosition().toString());
             prevNode = navNode.id;
-
             navMesh.updateDistances(player.getPosition());
         }
-
     }
 
     private void syncToPhysics() {

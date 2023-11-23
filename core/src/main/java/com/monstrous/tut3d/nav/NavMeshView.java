@@ -21,8 +21,6 @@ import com.monstrous.tut3d.behaviours.CookBehaviour;
 
 public class NavMeshView implements Disposable {
 
-
-
     private final ModelBatch modelBatch;
     private final World world;      // reference
     private ModelBuilder modelBuilder;
@@ -56,7 +54,7 @@ public class NavMeshView implements Disposable {
             GameObject go = world.getGameObject(i);
             if(go.type != GameObjectType.TYPE_ENEMY)
                 continue;
-            buildPath(((CookBehaviour)go.behaviour).path, world.navMesh.portals);
+            buildPath(((CookBehaviour)go.behaviour).path);
         }
     }
 
@@ -88,7 +86,7 @@ public class NavMeshView implements Disposable {
         instances.add(instance);
     }
 
-    public void buildPath( Array<Vector3> path, Array<NavMesh.Portal> portals ) {
+    public void buildPath( Array<Vector3> path ) {
         if (path == null || path.size == 0) {
             return;
         }
@@ -107,18 +105,6 @@ public class NavMeshView implements Disposable {
             short i1 = meshBuilder.vertex(v1.x, v1.y+0.2f, v1.z);
             meshBuilder.line(i0, i1);
         }
-
-        material = new Material(ColorAttribute.createDiffuse(Color.GRAY));
-        meshBuilder = modelBuilder.part("line", GL20.GL_LINES, VertexAttributes.Usage.Position, material);
-        for(NavMesh.Portal portal : portals ) {
-
-            Vector3 v0 = portal.left;
-            Vector3 v1 = portal.right;
-            short i0 = meshBuilder.vertex(v0.x, v0.y+0.1f, v0.z);      // raise a bit above ground
-            short i1 = meshBuilder.vertex(v1.x, v1.y+0.1f, v1.z);
-            meshBuilder.line(i0, i1);
-        }
-
         Model model = modelBuilder.end();
         ModelInstance instance = new ModelInstance(model, Vector3.Zero);
         models.add(model);

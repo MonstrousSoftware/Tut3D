@@ -14,6 +14,7 @@ public class Settings {
     static public float turnSpeed = 120f;   // degrees/s
     static public float jumpForce = 5.0f;
     static public float groundRayLength = 1.2f;
+    static public float navHeight = 1.6f;
 
 
     static public boolean invertLook = false;

@@ -29,6 +29,7 @@ public class GameScreen extends ScreenAdapter {
     private GUI gui;
     private boolean debugRender = false;
     private boolean thirdPersonView = false;
+    private boolean navScreen = false;
     private boolean lookThroughScope = false;
     private int windowedWidth, windowedHeight;
 
@@ -66,6 +67,7 @@ public class GameScreen extends ScreenAdapter {
 
         Gdx.input.setCatchKey(Input.Keys.F1, true);
         Gdx.input.setCatchKey(Input.Keys.F2, true);
+        Gdx.input.setCatchKey(Input.Keys.F3, true);
         Gdx.input.setCatchKey(Input.Keys.F11, true);
 
         // load gun model
@@ -131,6 +133,8 @@ public class GameScreen extends ScreenAdapter {
             debugRender = !debugRender;
         if (Gdx.input.isKeyJustPressed(Input.Keys.F2) )
             toggleViewMode();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F3) )
+            navScreen = !navScreen;
         if (Gdx.input.isKeyJustPressed(Input.Keys.F11))
             toggleFullScreen();
 
@@ -148,11 +152,11 @@ public class GameScreen extends ScreenAdapter {
         if(debugRender) {
             gridView.render(gameView.getCamera());
             physicsView.render(gameView.getCamera());
-
+        }
+        if(navScreen) {
             navMeshView.update(world);
             navMeshView.render(gameView.getCamera());
         }
-
 
         if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN && !lookThroughScope) {
             gunView.render(delta, moveSpeed);

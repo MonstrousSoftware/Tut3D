@@ -10,7 +10,8 @@ import com.badlogic.gdx.utils.Array;
 import com.monstrous.tut3d.Settings;
 
 public class NavMesh {
-    public Array<NavNode> navNodes;
+    public Array<NavNode> navNodes;         // node in nav mesh (triangles)
+    private Vector3 goal;                   // target used for calculating distances
 
 
     // create a navigation mesh from the mesh of a model instance
@@ -94,6 +95,8 @@ public class NavMesh {
                 }
             }
         }
+        goal = new Vector3();
+
         StringBuilder sb = new StringBuilder();
         Gdx.app.log("Nav Connections:", ""+links);
         for(int i = 0; i < numTriangles; i++) {
@@ -141,14 +144,16 @@ public class NavMesh {
 
     // update distance for each node to the target point
     public void updateDistances( Vector3 targetPoint ) {
-        NavNode target = findNode( targetPoint, Settings.groundRayLength );
+        goal.set(targetPoint);
+
+        NavNode target = findNode( targetPoint, Settings.navHeight );
         if(target == null) {
-               Gdx.app.error("warning: updateDistances: start not in node", "");
-                target = findClosestNode(targetPoint);      // navigate towards centre of closest node to get back in the game
+              // Gdx.app.error("warning: updateDistances: start not in node", "");
+               target = findClosestNode(targetPoint);      // navigate towards centre of closest node to get back in the game
         }
 
         // Dijkstra's algorithm
-        //   here we are not looking for a shortest path, but to update each node with a shortest distance value
+        //   here we are not looking for the shortest path, but to update each node with distance value to the target
         Array<NavNode> Q = new Array<>();
 
         for(int i = 0; i < navNodes.size; i++){
@@ -183,12 +188,12 @@ public class NavMesh {
         } // while
     }
 
-    public boolean  findPath( Vector3 startPoint, Array<NavNode> path ) {
+    private boolean  findPath( Vector3 startPoint, Array<NavNode> path ) {
 
-        NavNode node = findNode(startPoint, Settings.groundRayLength);
+        NavNode node = findNode(startPoint, Settings.navHeight);
         if (node == null) {
             node = findClosestNode(startPoint);      // navigate towards centre of closest node to get back in the game
-            Gdx.app.error("warning: findPath: start not in node", "going to node:"+node.id);
+            //Gdx.app.error("warning: findPath: start not in node", "going to node:"+node.id);
          }
         path.clear();
         path.add(node);
@@ -212,7 +217,7 @@ public class NavMesh {
             sb.append(" ");
             sb.append(n.id);
         }
-        Gdx.app.log("path", " id:" +sb.toString());
+       // Gdx.app.log("path", " id:" +sb.toString());
         return true;
     }
 
@@ -283,11 +288,40 @@ public class NavMesh {
             throw new RuntimeException("Cannot match edges");
     }
 
+
+    // returns true of path was rebuilt
+    public boolean  makePath( Vector3 startPoint, Vector3 targetPoint, Array<Vector3> pointPath ) {
+
+        if(pointPath.size > 0) {
+            Vector3 endPoint = new Vector3(targetPoint);
+            NavNode endNode = findNode(endPoint, Settings.navHeight);
+            if(endNode == null) {
+                endNode = findClosestNode(endPoint);        // we cannot get to the target, go to the centre of the closest node
+                endPoint.set(endNode.centre);
+            }
+            endPoint.y = endNode.p0.y;
+            Vector3 end = pointPath.get(pointPath.size - 1);
+            if (end.dst(endPoint) < 1f)      // if existing path leads (close to) to target point, we don't need to recalculate
+                return false;
+        }
+
+        Array<NavNode> navNodePath = new Array<>();
+        Gdx.app.log("find path", "recalculating path");
+        findPath(startPoint, navNodePath);
+        makePath(startPoint, targetPoint, navNodePath, pointPath);
+        return true;
+    }
+
+
+    // string pulling algo:
+    // "simple stupid funnel algorithm" by Mikko Mononen
+    //
+
     // a portal is an edge between two adjacent nodes (i.e. triangles) on the path
     public static class Portal {
         public Vector3 left;
         public Vector3 right;
-        public boolean slopeChange;
+        public boolean slopeChange;     // indicator if portal connects nodes with different slope
 
         public Portal(Vector3 left, Vector3 right, boolean slopeChange ) {
             this.left = new Vector3(left);
@@ -296,29 +330,17 @@ public class NavMesh {
         }
     }
 
-    // string pulling algo:
-    // "simple stupid funnel algorithm" by Mikko Mononen
-    //
-    public Array<Portal> portals = new Array<>();
+    private void makePath( Vector3 startPoint, Vector3 targetPoint, Array<NavNode> nodePath, Array<Vector3> pointPath ) {
 
-    private Array<NavNode> navNodePath = new Array<>();
-
-    public void makePath( Vector3 startPoint, Vector3 targetPoint, Array<Vector3> pointPath ) {
-        findPath(startPoint, navNodePath);
-        makePath(startPoint, targetPoint, navNodePath, pointPath);
-    }
-
-
-    public void makePath( Vector3 startPoint, Vector3 targetPoint, Array<NavNode> nodePath, Array<Vector3> pointPath ) {
-
-        //Array<Portal> portals = new Array<>();
+        Array<Portal> portals = new Array<>();
         Vector3 edgeStart = new Vector3();
         Vector3 edgeEnd = new Vector3();
 
+        // build a list of portals, i.e. edges between triangles on the node path to the goal
         portals.clear();
-        NavNode startNode = findNode(startPoint, Settings.groundRayLength);
+        NavNode startNode = findNode(startPoint, Settings.navHeight);
         if(startNode != null)
-            startPoint.y = startNode.p0.y;
+            startPoint.y = startNode.p0.y;                                          // make sure to use node (floor) height, not character height
         portals.add(new Portal(startPoint, startPoint, false));
         for (int i = 0; i < nodePath.size - 1; i++) {
             NavNode node = nodePath.get(i);
@@ -327,12 +349,16 @@ public class NavMesh {
             boolean slopeChange = ( node.normal.dot(nextNode.normal) < 0.99f ); // use dot product of normals to detect slope change
             portals.add(new Portal(edgeEnd, edgeStart, slopeChange));
         }
-        NavNode endNode = findNode(targetPoint, Settings.groundRayLength);
-        if(endNode != null)
-            targetPoint.y = endNode.p0.y;
-        portals.add(new Portal(targetPoint, targetPoint, false));
+        Vector3 endPoint = new Vector3(targetPoint);
+        NavNode endNode = findNode(endPoint, Settings.navHeight);
+        if(endNode == null) {
+            endNode = findClosestNode(endPoint);        // we cannot get to the target, go to the centre of the closest node
+            endPoint.set(endNode.centre);
+        }
+        endPoint.y = endNode.p0.y;
+        portals.add(new Portal(endPoint, endPoint, false));
 
-
+        // use the portals to create a list of way points
         pointPath.clear();
         pointPath.add(new Vector3(startPoint));
 
@@ -344,8 +370,6 @@ public class NavMesh {
 
         for (int i = 1; i < portals.size; i++) {
             Portal portal = portals.get(i);
-
-
 
             // update right leg
             if ( area(apex, rightFoot, portal.right) <= 0) {
@@ -404,7 +428,7 @@ public class NavMesh {
             }
 
         }
-        pointPath.add(targetPoint);
+        pointPath.add(endPoint);
     }
 
 

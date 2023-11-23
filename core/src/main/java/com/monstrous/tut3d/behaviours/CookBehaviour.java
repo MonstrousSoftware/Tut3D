@@ -1,5 +1,6 @@
 package com.monstrous.tut3d.behaviours;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.monstrous.tut3d.GameObject;
@@ -18,19 +19,16 @@ public class CookBehaviour extends Behaviour {
     private final Vector3 shootDirection = new Vector3();
     private final Vector3 direction = new Vector3();
     private final Vector3 targetDirection = new Vector3();
-    private final Vector3 angularVelocity = new Vector3();
     private final Vector3 playerVector = new Vector3();
     public Array<Vector3> path;
-    private float pathUpdateTimer;
+    private int wayPointIndex;
+
 
     public CookBehaviour(GameObject go) {
         super(go);
         shootTimer = SHOOT_INTERVAL;
         go.body.setCapsuleCharacteristics();
-       // navNodePath = new Array<>();
         path = new Array<>();
-
-
     }
 
     public Vector3 getDirection() {
@@ -42,41 +40,48 @@ public class CookBehaviour extends Behaviour {
         if(go.health <= 0)   // don't do anything when dead
             return;
 
-        // every so often calculate a path to the player using the nav mesh
-        pathUpdateTimer -= deltaTime;
-        if(pathUpdateTimer <= 0) {
-            world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), path);
-            pathUpdateTimer = 0.1f;
-        }
-
-        Vector3 wayPoint = path.get(1);
-
-        float climbFactor = 1f;
-        if(path.size > 2 && wayPoint.y < path.get(2).y){    // if we need to climb up, disable the gravity
-            go.body.geom.getBody().setGravityMode(false);
-            climbFactor = 2f;       // and apply some extra force
-        }
-        else
-            go.body.geom.getBody().setGravityMode(true);
-
-        // move towards waypoint
-        targetDirection.set(wayPoint).sub(go.getPosition());  // vector towards way point
-        targetDirection.y = 0;  // consider only vector in horizontal plane
-        targetDirection.nor();      // make unit vector
-        direction.slerp(targetDirection, 0.02f);            // smooth rotation towards target direction
-
         playerVector.set(world.getPlayer().getPosition()).sub(go.getPosition());    // vector to player in a straight line
         float distance = playerVector.len();
-        if(distance > 5f)   // move unless quite close
-            go.body.applyForce(targetDirection.scl(Settings.cookForce *climbFactor));
 
+        // update path to the player's current position using the nav mesh
+        // only needs to be recalculated if the target moved
+        boolean rebuilt = world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), path);
+        if(rebuilt)
+            wayPointIndex = 1;      // reset to start of new path
+
+        if(path.size > 1) {
+            Vector3 wayPoint = path.get(wayPointIndex);
+            if (wayPointIndex < path.size-1 && wayPoint.dst(go.getPosition()) < 1) {     // reached a waypoint, move to next one
+                wayPointIndex++;
+                wayPoint = path.get(wayPointIndex);
+                //Gdx.app.log("Cook going to next waypoint", "WP:"+wayPoint.toString());
+            }
+
+            float climbFactor = 1f;
+            if ( wayPoint.y > path.get(wayPointIndex-1).y + 0.1f) {    // if we need to climb up, disable the gravity
+                go.body.geom.getBody().setGravityMode(false);
+                climbFactor = 2f;       // and apply some extra force
+                //Gdx.app.log("Cook climbing slope", "");
+            } else
+                go.body.geom.getBody().setGravityMode(true);
+
+            // move towards waypoint
+            targetDirection.set(wayPoint).sub(go.getPosition());  // vector towards way point
+            targetDirection.y = 0;  // consider only vector in horizontal plane
+            targetDirection.nor();      // make unit vector
+            direction.slerp(targetDirection, 0.02f);            // smooth rotation towards target direction
+
+
+            if(distance > 5f)   // move unless quite close
+                go.body.applyForce(targetDirection.scl(Settings.cookForce * climbFactor));
+        }
 
         // every so often shoot a pan
-//        shootTimer -= deltaTime;
-//        if(shootTimer <= 0 && distance < 20f && world.getPlayer().health > 0) {
-//            shootTimer = SHOOT_INTERVAL;
-//            shootPan(world);
-//        }
+        shootTimer -= deltaTime;
+        if(shootTimer <= 0 && distance < 20f && world.getPlayer().health > 0) {
+            shootTimer = SHOOT_INTERVAL;
+            shootPan(world);
+        }
     }
 
     private void shootPan(World world) {
