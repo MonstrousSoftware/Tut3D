@@ -34,6 +34,8 @@ public class Settings {
     static public float panForce = 23f;
     static public float gunForce = 40f;
 
+    static public float cookForce = 8f; // force on cook to move, determines walk speed
+
     static public Vector3 gunPosition = new Vector3(-1.1f, 1.9f, 1.8f); // gun position in gun camera view
     static public float gunScale = 3.0f;
 

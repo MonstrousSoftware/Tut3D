@@ -87,10 +87,12 @@ public class World implements Disposable {
             Scene proxyScene = loadNode( proxyName, resetPosition, position );
             collisionInstance = proxyScene.modelInstance;
         }
+        PhysicsBody body = null;
         if(type == GameObjectType.TYPE_NAVMESH){
             navMesh = new NavMesh(scene.modelInstance);
         }
-        PhysicsBody body = factory.createBody(collisionInstance, shapeType, type.isStatic);
+        else
+            body = factory.createBody(collisionInstance, shapeType, type.isStatic);
         GameObject go = new GameObject(type, scene, body);
         gameObjects.add(go);
         if(go.type == GameObjectType.TYPE_ENEMY)
@@ -177,7 +179,7 @@ public class World implements Disposable {
 
     private void syncToPhysics() {
         for(GameObject go : gameObjects){
-            if( go.body.geom.getBody() != null) {
+            if( go.body != null && go.body.geom.getBody() != null) {
                 if(go.type == GameObjectType.TYPE_PLAYER){
                     // use information from the player controller, since the rigid body is not rotated.
                     player.scene.modelInstance.transform.setToRotation(Vector3.Z, playerController.getForwardDirection());

@@ -123,13 +123,29 @@ public class NavMesh {
         return null;
     }
 
+    // find closest node - in case point is not in a node (off-piste)
+    public NavNode findClosestNode( Vector3 point ){
+        float minDist = Float.MAX_VALUE;
+        NavNode closest = null;
+        for(NavNode node : navNodes ) {
+            float len2 = point.dst2(node.centre);
+            if(len2 < minDist) {
+                minDist = len2;
+                closest = node;
+            }
+        }
+        return closest;
+    }
+
     // todo: use size of node for cost because a large node should be more costly to cross
 
     // update distance for each node to the target point
     public void updateDistances( Vector3 targetPoint ) {
         NavNode target = findNode( targetPoint, Settings.groundRayLength );
-        if(target == null)
-            return;
+        if(target == null) {
+               Gdx.app.error("warning: updateDistances: start not in node", "");
+                target = findClosestNode(targetPoint);      // navigate towards centre of closest node to get back in the game
+        }
 
         // Dijkstra's algorithm
         //   here we are not looking for a shortest path, but to update each node with a shortest distance value
@@ -171,9 +187,9 @@ public class NavMesh {
 
         NavNode node = findNode(startPoint, Settings.groundRayLength);
         if (node == null) {
-            Gdx.app.error("findPath: start not in node", "");
-            return false;
-        }
+            node = findClosestNode(startPoint);      // navigate towards centre of closest node to get back in the game
+            Gdx.app.error("warning: findPath: start not in node", "going to node:"+node.id);
+         }
         path.clear();
         path.add(node);
         while( node.steps != 0) {
@@ -285,6 +301,14 @@ public class NavMesh {
     //
     public Array<Portal> portals = new Array<>();
 
+    private Array<NavNode> navNodePath = new Array<>();
+
+    public void makePath( Vector3 startPoint, Vector3 targetPoint, Array<Vector3> pointPath ) {
+        findPath(startPoint, navNodePath);
+        makePath(startPoint, targetPoint, navNodePath, pointPath);
+    }
+
+
     public void makePath( Vector3 startPoint, Vector3 targetPoint, Array<NavNode> nodePath, Array<Vector3> pointPath ) {
 
         //Array<Portal> portals = new Array<>();
@@ -292,6 +316,9 @@ public class NavMesh {
         Vector3 edgeEnd = new Vector3();
 
         portals.clear();
+        NavNode startNode = findNode(startPoint, Settings.groundRayLength);
+        if(startNode != null)
+            startPoint.y = startNode.p0.y;
         portals.add(new Portal(startPoint, startPoint, false));
         for (int i = 0; i < nodePath.size - 1; i++) {
             NavNode node = nodePath.get(i);
@@ -300,6 +327,9 @@ public class NavMesh {
             boolean slopeChange = ( node.normal.dot(nextNode.normal) < 0.99f ); // use dot product of normals to detect slope change
             portals.add(new Portal(edgeEnd, edgeStart, slopeChange));
         }
+        NavNode endNode = findNode(targetPoint, Settings.groundRayLength);
+        if(endNode != null)
+            targetPoint.y = endNode.p0.y;
         portals.add(new Portal(targetPoint, targetPoint, false));
 
 

@@ -1,4 +1,4 @@
-package com.monstrous.tut3d.views;
+package com.monstrous.tut3d.physics;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -37,6 +37,9 @@ public class PhysicsView implements Disposable {
 
     private void renderCollisionShape(PhysicsBody body) {
         // move & orient debug modelInstance in line with geom
+        if(body == null)
+            return;
+
         body.debugInstance.transform.set(body.getPosition(), body.getBodyOrientation());
 
         // use different colour for static/sleeping/active objects and for active ones

@@ -1,4 +1,4 @@
-package com.monstrous.tut3d.views;
+package com.monstrous.tut3d.nav;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -15,10 +15,9 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.GameObject;
+import com.monstrous.tut3d.GameObjectType;
 import com.monstrous.tut3d.World;
-import com.monstrous.tut3d.nav.NavMesh;
-import com.monstrous.tut3d.nav.NavNode;
-import com.monstrous.tut3d.physics.PhysicsBody;
+import com.monstrous.tut3d.behaviours.CookBehaviour;
 
 public class NavMeshView implements Disposable {
 
@@ -27,43 +26,52 @@ public class NavMeshView implements Disposable {
     private final ModelBatch modelBatch;
     private final World world;      // reference
     private ModelBuilder modelBuilder;
-    private ModelInstance instance;
-    private ModelInstance pathInstance;
-    private Model model;
-    private Model pathModel;
+    private Array<ModelInstance> instances;
+    private Array<Model> models;
 
 
     public NavMeshView(World world) {
         this.world = world;
         modelBatch = new ModelBatch();
+        instances = new Array<>();
+        models = new Array<>();
     }
 
     public void render( Camera cam ) {
         modelBatch.begin(cam);
-        if(instance != null)
-            modelBatch.render(instance);
-        if(pathInstance != null)
-            modelBatch.render(pathInstance);
+        modelBatch.render(instances);
         modelBatch.end();
     }
 
+    public void update( World world ) {
+        for(Model model : models)
+            model.dispose();
+        models.clear();
+        instances.clear();
 
+        buildNavNodes(world.navMesh.navNodes);
 
-    public void buildShape( Array<NavNode> path ) {
+        int numObjects = world.getNumGameObjects();
+        for(int i = 0; i < numObjects; i++) {
+            GameObject go = world.getGameObject(i);
+            if(go.type != GameObjectType.TYPE_ENEMY)
+                continue;
+            buildPath(((CookBehaviour)go.behaviour).path, world.navMesh.portals);
+        }
+    }
+
+    public void buildNavNodes(Array<NavNode> path ) {
         if (path == null || path.size == 0) {
-            instance = null;
             return;
         }
 
-        //Material material = new Material(ColorAttribute.createDiffuse(Color.ORANGE));
         modelBuilder = new ModelBuilder();
         modelBuilder.begin();
         MeshPartBuilder meshBuilder;
-        //meshBuilder = modelBuilder.part("part", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, material);
 
         for(NavNode navNode : path ) {
 
-            Material material = new Material(ColorAttribute.createDiffuse((float)(16-navNode.steps)/16f, 0, .5f, 1));
+            Material material = new Material(ColorAttribute.createDiffuse((float)(16-navNode.steps)/16f, 0, .5f, 1));   // colour shade depends on distance to target
             meshBuilder = modelBuilder.part("part", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, material);
 
 
@@ -74,16 +82,14 @@ public class NavMeshView implements Disposable {
             meshBuilder.ensureTriangleIndices(1);
             meshBuilder.triangle(v0, v1, v2);
         }
-
-        if(model != null)
-            model.dispose();
-        model = modelBuilder.end();
-        instance = new ModelInstance(model, Vector3.Zero);
+        Model model = modelBuilder.end();
+        ModelInstance instance = new ModelInstance(model, Vector3.Zero);
+        models.add(model);
+        instances.add(instance);
     }
 
     public void buildPath( Array<Vector3> path, Array<NavMesh.Portal> portals ) {
         if (path == null || path.size == 0) {
-            pathInstance = null;
             return;
         }
 
@@ -113,16 +119,42 @@ public class NavMeshView implements Disposable {
             meshBuilder.line(i0, i1);
         }
 
-        if(pathModel != null)
-            pathModel.dispose();
-        pathModel = modelBuilder.end();
-        pathInstance = new ModelInstance(pathModel, Vector3.Zero);
+        Model model = modelBuilder.end();
+        ModelInstance instance = new ModelInstance(model, Vector3.Zero);
+        models.add(model);
+        instances.add(instance);
+    }
+
+    public void buildPortals( Array<NavMesh.Portal> portals ) {
+        if (portals.size == 0) {
+            return;
+        }
+
+        modelBuilder = new ModelBuilder();
+        modelBuilder.begin();
+        MeshPartBuilder meshBuilder;
+
+        Material material = new Material(ColorAttribute.createDiffuse(Color.GRAY));
+        meshBuilder = modelBuilder.part("line", GL20.GL_LINES, VertexAttributes.Usage.Position, material);
+        for(NavMesh.Portal portal : portals ) {
+
+            Vector3 v0 = portal.left;
+            Vector3 v1 = portal.right;
+            short i0 = meshBuilder.vertex(v0.x, v0.y+0.1f, v0.z);      // raise a bit above ground
+            short i1 = meshBuilder.vertex(v1.x, v1.y+0.1f, v1.z);
+            meshBuilder.line(i0, i1);
+        }
+        Model model = modelBuilder.end();
+        ModelInstance instance = new ModelInstance(model, Vector3.Zero);
+        models.add(model);
+        instances.add(instance);
     }
 
 
     @Override
     public void dispose() {
         modelBatch.dispose();
-        model.dispose();
+        for(Model model : models)
+            model.dispose();
     }
 }

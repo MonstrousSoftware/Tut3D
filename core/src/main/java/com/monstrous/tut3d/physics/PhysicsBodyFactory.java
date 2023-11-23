@@ -51,7 +51,7 @@ public class PhysicsBodyFactory implements Disposable {
         disposables = new Array<>();
     }
 
-    public PhysicsBody createBody( ModelInstance collisionInstance, CollisionShapeType shapeType, boolean isStatic) {
+    public PhysicsBody createBody( ModelInstance collisionInstance, CollisionShapeType shapeType, boolean isStatic ) {
         BoundingBox bbox = new BoundingBox();
         Node node = collisionInstance.nodes.first();
         node.calculateBoundingBox(bbox, false); // bounding box without the transform
@@ -106,8 +106,7 @@ public class PhysicsBodyFactory implements Disposable {
             geom.setCategoryBits(CATEGORY_STATIC);   // which category is this object?
             geom.setCollideBits(0);                  // which categories will it collide with?
             // note: geom for static object has no rigid body attached
-        }
-        else {
+        } else {
             DBody rigidBody = OdeHelper.createBody(physicsWorld.world);
             rigidBody.setMass(massInfo);
             rigidBody.enable();

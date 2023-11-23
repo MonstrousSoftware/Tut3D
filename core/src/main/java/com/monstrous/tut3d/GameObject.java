@@ -20,7 +20,8 @@ public class GameObject implements Disposable {
         this.type = type;
         this.scene = scene;
         this.body = body;
-        body.geom.setData(this);            // the geom has user data to link back to GameObject for collision handling
+        if(body != null)
+            body.geom.setData(this);            // the geom has user data to link back to GameObject for collision handling
         visible = true;
         direction = new Vector3();
         health = 1f;
@@ -37,6 +38,8 @@ public class GameObject implements Disposable {
     }
 
     public Vector3 getPosition() {
+        if(body == null)
+            return Vector3.Zero;
         return body.getPosition();
     }
 

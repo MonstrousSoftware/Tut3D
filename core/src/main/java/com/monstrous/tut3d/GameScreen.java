@@ -12,8 +12,8 @@ import com.monstrous.tut3d.inputs.MyControllerAdapter;
 import com.monstrous.tut3d.physics.CollisionShapeType;
 import com.monstrous.tut3d.views.GameView;
 import com.monstrous.tut3d.views.GridView;
-import com.monstrous.tut3d.views.NavMeshView;
-import com.monstrous.tut3d.views.PhysicsView;
+import com.monstrous.tut3d.nav.NavMeshView;
+import com.monstrous.tut3d.physics.PhysicsView;
 
 public class GameScreen extends ScreenAdapter {
 
@@ -148,10 +148,11 @@ public class GameScreen extends ScreenAdapter {
         if(debugRender) {
             gridView.render(gameView.getCamera());
             physicsView.render(gameView.getCamera());
+
+            navMeshView.update(world);
+            navMeshView.render(gameView.getCamera());
         }
-        navMeshView.buildShape(world.navMesh.navNodes);
-        navMeshView.buildPath(((CookBehaviour)world.theCook.behaviour).path, world.navMesh.portals);
-        navMeshView.render(gameView.getCamera());
+
 
         if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN && !lookThroughScope) {
             gunView.render(delta, moveSpeed);

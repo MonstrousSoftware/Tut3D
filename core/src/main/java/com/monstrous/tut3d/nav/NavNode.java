@@ -5,7 +5,6 @@ package com.monstrous.tut3d.nav;
 // i.e. a triangle
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.GeometryUtils;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -13,6 +12,7 @@ import com.badlogic.gdx.utils.Array;
 public class NavNode {
     public final int id;
     public final Vector3 p0, p1, p2;
+    public final Vector3 centre;
     public Vector3 normal;
     private float d;        // for place equation
     public Array<NavNode> neighbours;
@@ -28,6 +28,7 @@ public class NavNode {
         p0 = new Vector3(a);
         p1 = new Vector3(b);
         p2 = new Vector3(c);
+        centre = new Vector3(a).add(b).add(c).scl(1/3f);
 
         float eps = 1e-16f;
         if(p0.epsilonEquals(p1, eps) || p1.epsilonEquals(p2, eps) || p2.epsilonEquals(p0, eps)) {

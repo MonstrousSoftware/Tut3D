@@ -19,7 +19,7 @@ public class CookBehaviour extends Behaviour {
     private final Vector3 direction = new Vector3();
     private final Vector3 targetDirection = new Vector3();
     private final Vector3 angularVelocity = new Vector3();
-    private Array<NavNode> navNodePath;
+    private final Vector3 playerVector = new Vector3();
     public Array<Vector3> path;
     private float pathUpdateTimer;
 
@@ -27,8 +27,10 @@ public class CookBehaviour extends Behaviour {
         super(go);
         shootTimer = SHOOT_INTERVAL;
         go.body.setCapsuleCharacteristics();
-        navNodePath = new Array<>();
+       // navNodePath = new Array<>();
         path = new Array<>();
+
+
     }
 
     public Vector3 getDirection() {
@@ -40,33 +42,34 @@ public class CookBehaviour extends Behaviour {
         if(go.health <= 0)   // don't do anything when dead
             return;
 
-       // NavNode node = world.navMesh.findNode(go.getPosition(), Settings.groundRayLength);
+        // every so often calculate a path to the player using the nav mesh
         pathUpdateTimer -= deltaTime;
         if(pathUpdateTimer <= 0) {
-            world.navMesh.findPath(go.getPosition(), navNodePath);
-            world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), navNodePath, path);
-            pathUpdateTimer = 0.5f;
+            world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), path);
+            pathUpdateTimer = 0.1f;
         }
 
-        // move towards player
-//        targetDirection.set(world.getPlayer().getPosition()).sub(go.getPosition());  // vector towards player
-//        targetDirection.y = 0;  // consider only vector in horizontal plane
-//        float distance = targetDirection.len();
-//        targetDirection.nor();      // make unit vector
-//        direction.set(targetDirection);
-//        if(distance > 5f)   // move unless quite close
-//            go.body.applyForce(targetDirection.scl(1.5f));
+        Vector3 wayPoint = path.get(1);
 
+        float climbFactor = 1f;
+        if(path.size > 2 && wayPoint.y < path.get(2).y){    // if we need to climb up, disable the gravity
+            go.body.geom.getBody().setGravityMode(false);
+            climbFactor = 2f;       // and apply some extra force
+        }
+        else
+            go.body.geom.getBody().setGravityMode(true);
 
-        // rotate to follow player
-        angularVelocity.set(0,0,0);
+        // move towards waypoint
+        targetDirection.set(wayPoint).sub(go.getPosition());  // vector towards way point
+        targetDirection.y = 0;  // consider only vector in horizontal plane
         targetDirection.nor();      // make unit vector
-        Vector3 facing = go.getDirection();                                             // vector we're facing now
-        float dot = targetDirection.dot(facing);                                        // dot product = cos of angle between the vectors
-        float cross = Math.signum(targetDirection.crs(facing).y);                       // cross product to give direction to turn
-        if(dot < 0.99f)                         // if not facing player
-            angularVelocity.y = -cross;         // turn towards player
-        go.body.applyTorque(angularVelocity);
+        direction.slerp(targetDirection, 0.02f);            // smooth rotation towards target direction
+
+        playerVector.set(world.getPlayer().getPosition()).sub(go.getPosition());    // vector to player in a straight line
+        float distance = playerVector.len();
+        if(distance > 5f)   // move unless quite close
+            go.body.applyForce(targetDirection.scl(Settings.cookForce *climbFactor));
+
 
         // every so often shoot a pan
 //        shootTimer -= deltaTime;
