@@ -50,7 +50,7 @@ public class CameraController extends InputAdapter {
     private boolean zoom (float amount) {
         if(amount < 0 && distance < 5f)
             return false;
-        if(amount > 0 && distance > 30f)
+        if(amount > 0 && distance > 50f)
             return false;
         distance += amount;
         return true;

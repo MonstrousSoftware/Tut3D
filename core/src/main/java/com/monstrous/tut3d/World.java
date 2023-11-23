@@ -1,6 +1,7 @@
 package com.monstrous.tut3d;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.math.Vector3;
@@ -8,6 +9,8 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.behaviours.CookBehaviour;
 import com.monstrous.tut3d.inputs.PlayerController;
+import com.monstrous.tut3d.nav.NavMesh;
+import com.monstrous.tut3d.nav.NavNode;
 import com.monstrous.tut3d.physics.*;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
@@ -16,6 +19,7 @@ public class World implements Disposable {
 
     private final Array<GameObject> gameObjects;
     private GameObject player;
+    public GameObject theCook;  // TMP
     public GameStats stats;
     private final SceneAsset sceneAsset;
     private final PhysicsWorld physicsWorld;
@@ -23,6 +27,12 @@ public class World implements Disposable {
     private final PlayerController playerController;
     public final PhysicsRayCaster rayCaster;
     public final WeaponState weaponState;
+    public NavMesh navMesh;
+    public NavNode navNode;
+    public NavNode targetNavNode;
+    public Array<NavNode> path;
+    public Vector3 targetPosition;
+    private int prevNode = -1;
 
     public World() {
         gameObjects = new Array<>();
@@ -46,6 +56,8 @@ public class World implements Disposable {
 
         gameObjects.clear();
         player = null;
+        navMesh = null;
+        prevNode = -1;
     }
     public int getNumGameObjects() {
         return gameObjects.size;
@@ -75,6 +87,9 @@ public class World implements Disposable {
             Scene proxyScene = loadNode( proxyName, resetPosition, position );
             collisionInstance = proxyScene.modelInstance;
         }
+        if(type == GameObjectType.TYPE_NAVMESH){
+            navMesh = new NavMesh(scene.modelInstance);
+        }
         PhysicsBody body = factory.createBody(collisionInstance, shapeType, type.isStatic);
         GameObject go = new GameObject(type, scene, body);
         gameObjects.add(go);
@@ -82,6 +97,22 @@ public class World implements Disposable {
             stats.numEnemies++;
         if(go.type == GameObjectType.TYPE_PICKUP_COIN)
            stats.numCoins++;
+        if(go.type == GameObjectType.TYPE_PICKUP_COIN) {      // TMP
+            targetNavNode = navMesh.findNode(go.getPosition(),  1f);
+            Gdx.app.log("target is in nav node:", ""+targetNavNode.id+" pos:"+ go.getPosition().toString());
+            targetPosition = new Vector3(go.getPosition());
+        }
+
+        if(go.type == GameObjectType.TYPE_PLAYER) {      // TMP
+            navNode = navMesh.findNode( go.getPosition(), Settings.groundRayLength );
+            if(navNode == null)
+                Gdx.app.error("** NO NAV NODE player is in nav node:", " pos:"+ go.getPosition().toString());
+            else
+                Gdx.app.log("player is in nav node:", ""+navNode.id+" pos:"+ go.getPosition().toString());
+        }
+        if(go.type == GameObjectType.TYPE_ENEMY) {      // TMP
+            theCook = go;
+        }
         return go;
     }
 
@@ -111,6 +142,8 @@ public class World implements Disposable {
         gameObject.dispose();
     }
 
+
+
     public void update( float deltaTime ) {
         if(stats.numEnemies > 0 || stats.coinsCollected < stats.numCoins)
             stats.gameTime += deltaTime;
@@ -128,6 +161,18 @@ public class World implements Disposable {
                 removeObject(go);
             go.update(this, deltaTime);
         }
+
+
+        navNode = navMesh.findNode( player.getPosition(), Settings.groundRayLength );
+        if(navNode == null)
+            Gdx.app.error("** NO NAV NODE player is in nav node:", " pos:"+ player.getPosition().toString());
+        else if (navNode.id != prevNode) {
+            Gdx.app.log("player is in nav node:", "" + navNode.id + " pos:" + player.getPosition().toString());
+            prevNode = navNode.id;
+
+            navMesh.updateDistances(player.getPosition());
+        }
+
     }
 
     private void syncToPhysics() {

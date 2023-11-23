@@ -1,10 +1,12 @@
 package com.monstrous.tut3d.behaviours;
 
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.GameObjectType;
 import com.monstrous.tut3d.Settings;
 import com.monstrous.tut3d.World;
+import com.monstrous.tut3d.nav.NavNode;
 import com.monstrous.tut3d.physics.CollisionShapeType;
 
 public class CookBehaviour extends Behaviour {
@@ -17,11 +19,16 @@ public class CookBehaviour extends Behaviour {
     private final Vector3 direction = new Vector3();
     private final Vector3 targetDirection = new Vector3();
     private final Vector3 angularVelocity = new Vector3();
+    private Array<NavNode> navNodePath;
+    public Array<Vector3> path;
+    private float pathUpdateTimer;
 
     public CookBehaviour(GameObject go) {
         super(go);
         shootTimer = SHOOT_INTERVAL;
         go.body.setCapsuleCharacteristics();
+        navNodePath = new Array<>();
+        path = new Array<>();
     }
 
     public Vector3 getDirection() {
@@ -33,14 +40,22 @@ public class CookBehaviour extends Behaviour {
         if(go.health <= 0)   // don't do anything when dead
             return;
 
+       // NavNode node = world.navMesh.findNode(go.getPosition(), Settings.groundRayLength);
+        pathUpdateTimer -= deltaTime;
+        if(pathUpdateTimer <= 0) {
+            world.navMesh.findPath(go.getPosition(), navNodePath);
+            world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), navNodePath, path);
+            pathUpdateTimer = 0.5f;
+        }
+
         // move towards player
-        targetDirection.set(world.getPlayer().getPosition()).sub(go.getPosition());  // vector towards player
-        targetDirection.y = 0;  // consider only vector in horizontal plane
-        float distance = targetDirection.len();
-        targetDirection.nor();      // make unit vector
-        direction.set(targetDirection);
-        if(distance > 5f)   // move unless quite close
-            go.body.applyForce(targetDirection.scl(1.5f));
+//        targetDirection.set(world.getPlayer().getPosition()).sub(go.getPosition());  // vector towards player
+//        targetDirection.y = 0;  // consider only vector in horizontal plane
+//        float distance = targetDirection.len();
+//        targetDirection.nor();      // make unit vector
+//        direction.set(targetDirection);
+//        if(distance > 5f)   // move unless quite close
+//            go.body.applyForce(targetDirection.scl(1.5f));
 
 
         // rotate to follow player
@@ -54,11 +69,11 @@ public class CookBehaviour extends Behaviour {
         go.body.applyTorque(angularVelocity);
 
         // every so often shoot a pan
-        shootTimer -= deltaTime;
-        if(shootTimer <= 0 && distance < 20f && world.getPlayer().health > 0) {
-            shootTimer = SHOOT_INTERVAL;
-            shootPan(world);
-        }
+//        shootTimer -= deltaTime;
+//        if(shootTimer <= 0 && distance < 20f && world.getPlayer().health > 0) {
+//            shootTimer = SHOOT_INTERVAL;
+//            shootPan(world);
+//        }
     }
 
     private void shootPan(World world) {

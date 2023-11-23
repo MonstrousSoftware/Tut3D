@@ -6,11 +6,13 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.math.Vector3;
+import com.monstrous.tut3d.behaviours.CookBehaviour;
 import com.monstrous.tut3d.gui.GUI;
 import com.monstrous.tut3d.inputs.MyControllerAdapter;
 import com.monstrous.tut3d.physics.CollisionShapeType;
 import com.monstrous.tut3d.views.GameView;
 import com.monstrous.tut3d.views.GridView;
+import com.monstrous.tut3d.views.NavMeshView;
 import com.monstrous.tut3d.views.PhysicsView;
 
 public class GameScreen extends ScreenAdapter {
@@ -19,6 +21,7 @@ public class GameScreen extends ScreenAdapter {
     private GridView gridView;
     private GameView gunView;
     private PhysicsView physicsView;
+    private NavMeshView navMeshView;
     private ScopeOverlay scopeOverlay;
     private World world;
     private World gunWorld;
@@ -41,6 +44,7 @@ public class GameScreen extends ScreenAdapter {
         gridView = new GridView();
         physicsView = new PhysicsView(world);
         scopeOverlay = new ScopeOverlay();
+        navMeshView = new NavMeshView(world);
 
         InputMultiplexer im = new InputMultiplexer();
         Gdx.input.setInputProcessor(im);
@@ -145,6 +149,9 @@ public class GameScreen extends ScreenAdapter {
             gridView.render(gameView.getCamera());
             physicsView.render(gameView.getCamera());
         }
+        navMeshView.buildShape(world.navMesh.navNodes);
+        navMeshView.buildPath(((CookBehaviour)world.theCook.behaviour).path, world.navMesh.portals);
+        navMeshView.render(gameView.getCamera());
 
         if(!thirdPersonView && world.weaponState.currentWeaponType == WeaponType.GUN && !lookThroughScope) {
             gunView.render(delta, moveSpeed);
@@ -176,5 +183,6 @@ public class GameScreen extends ScreenAdapter {
         gui.dispose();
         world.dispose();
         scopeOverlay.dispose();
+        navMeshView.dispose();
     }
 }
