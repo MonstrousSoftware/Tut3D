@@ -267,13 +267,16 @@ public class NavMesh {
             throw new RuntimeException("Cannot match edges");
     }
 
+    // a portal is an edge between two adjacent nodes (i.e. triangles) on the path
     public static class Portal {
         public Vector3 left;
         public Vector3 right;
+        public boolean slopeChange;
 
-        public Portal(Vector3 left, Vector3 right) {
+        public Portal(Vector3 left, Vector3 right, boolean slopeChange ) {
             this.left = new Vector3(left);
             this.right = new Vector3(right);
+            this.slopeChange = slopeChange;
         }
     }
 
@@ -289,14 +292,15 @@ public class NavMesh {
         Vector3 edgeEnd = new Vector3();
 
         portals.clear();
-        portals.add(new Portal(startPoint, startPoint));
+        portals.add(new Portal(startPoint, startPoint, false));
         for (int i = 0; i < nodePath.size - 1; i++) {
             NavNode node = nodePath.get(i);
             NavNode nextNode = nodePath.get(i + 1);
             getEdge(node, nextNode, edgeStart, edgeEnd);
-            portals.add(new Portal(edgeEnd, edgeStart));
+            boolean slopeChange = ( node.normal.dot(nextNode.normal) < 0.99f ); // use dot product of normals to detect slope change
+            portals.add(new Portal(edgeEnd, edgeStart, slopeChange));
         }
-        portals.add(new Portal(targetPoint, targetPoint));
+        portals.add(new Portal(targetPoint, targetPoint, false));
 
 
         pointPath.clear();
@@ -311,11 +315,11 @@ public class NavMesh {
         for (int i = 1; i < portals.size; i++) {
             Portal portal = portals.get(i);
 
+
+
             // update right leg
-            float area = area(apex, rightFoot, portal.right);
-            if ( area >= 0) {
-                area = area(apex, leftFoot, portal.right);
-                if (apex.epsilonEquals(rightFoot) || area <= 0f) {
+            if ( area(apex, rightFoot, portal.right) <= 0) {
+                if (apex.epsilonEquals(rightFoot) || area(apex, leftFoot, portal.right) > 0f) {
                     // tighten the funnel
                     rightFoot = portal.right;
                     rightIndex = i;
@@ -334,10 +338,8 @@ public class NavMesh {
                 }
             }
             // update left leg
-            area = area(apex, leftFoot, portal.left);
-            if (area <= 0) {
-                area = area(apex, rightFoot, portal.left);
-                if (apex.epsilonEquals(leftFoot) || area >= 0f) {
+            if (area(apex, leftFoot, portal.left) >= 0) {
+                if (apex.epsilonEquals(leftFoot) || area(apex, rightFoot, portal.left) < 0f) {
                     // tighten the funnel
                     leftFoot = portal.left;
                     leftIndex = i;
@@ -356,27 +358,32 @@ public class NavMesh {
                 }
             }
 
+            // force a way point on a slope change so that the path follows the slopes (e.g. over a bridge)
+            // this is an addition to SSFA
+            if(portal.slopeChange){
+                Vector3 wayPoint = new Vector3(portal.left).add(portal.right).scl(0.5f);    // mid point of portal
+                pointPath.add( wayPoint );
+                apex = wayPoint;
+                apexIndex = i;
+                // reset portal
+                leftFoot = apex;
+                rightFoot = apex;
+                leftIndex = apexIndex;
+                rightIndex = apexIndex;
+                continue;
+            }
+
         }
         pointPath.add(targetPoint);
     }
 
 
-
-    private Vector3 edgeB = new Vector3();
-    private Vector3 edgeC = new Vector3();
-
+    // 2d function to test if triangle a,b,c has positive or negative area, negative means the funnel legs are crossed
     private float area(Vector3 a, Vector3 b, Vector3 c) {
         float ax = b.x - a.x;
         float az = b.z - a.z;
         float bx = c.x - a.x;
         float bz = c.z - a.z;
-        return bx*az - ax*bz;
-//
-//
-//        edgeB.set(b).sub(a);
-//        edgeC.set(c).sub(a);
-//        return edgeC.x*edgeB.y - edgeB.x * edgeC.y;     // todo fix for 3d
-//        //return edgeB.crs(edgeC);  // calculates area of parallelogram formed by ba and ca, equals magnitude of cross product
-//        // we only actually care about the sign, so we use the cheaper len2() instead of len()
+        return - (bx*az - ax*bz);
     }
 }

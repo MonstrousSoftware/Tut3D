@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.Array;
 public class NavNode {
     public final int id;
     public final Vector3 p0, p1, p2;
-    private Vector3 normal;
+    public Vector3 normal;
     private float d;        // for place equation
     public Array<NavNode> neighbours;
     private Vector3 p = new Vector3();      // tmp var
