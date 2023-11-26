@@ -12,26 +12,29 @@ But it can be improved by making use of a so-called navigation mesh, navmesh for
 In our case we will use it for the enemies to find a smart path towards the player.  In other words, all the navigation actors will have the same target. If different actors have different targets, e.g. an enemy will look for a health pack when they are low on health, it would need to be adapted.
 
 To determine a smart route for the enemies we will follow four steps:
-1. Construct a navigation mesh for the environment to define which areas are reachable and how they are connected.
+1. Construct a navigation mesh for the environment to define which areas are walkable and how they are connected.
 2. Calculate for each node in the navigation mesh the distance to the target, i.e. the player position.
-3. Determine for each enemy the shorted sequence of nodes to reach the player’s node making using the distance values.
-4. For each enemy, construct an efficient sequence of way points through the node list so that the route never goes outside the node list and the path goes as close to inside corners as possible.  This is sometimes known as a string pulling algorithm.
+3. Determine for each enemy the shortest sequence of nodes to reach the player’s node making use of the distance values.
+4. For each enemy, construct an efficient sequence of way points through the node list so that the route never goes outside the node list and the path goes as close to inside corners as possible.  This is known as a string pulling algorithm.
 
 
 A navigation mesh is a data structure that represents areas in the map (called ‘nodes’) and the connections between them.  In general, nodes can be any convex polygon. In our case, we will use triangles because we can conveniently extract triangles from a 3d model.
 
 
-In fact, in a pinch we can construct the navmesh by hand in 3d modelling software such as Blender.
+In fact, we can construct the navmesh by hand in 3d modelling software such as Blender.
 
 It is a little bit tedious but not so difficult in Blender because our map is quite simple.  Add a plane and call it “NAVMESH”. Select it and switch to Edit mode and select Top view.  Then select edges and extrude them to fit the open walkable space.  You can select vertices and reposition them.  Leave some space from the walls so that the characters don’t get stuck in walls or on corners.  These gaps should be roughly equivalent to the radius of your character.  Try to make sure that vertices which are at the same location are merged and keep the mesh as simple as possible. 
 
 ![nav mesh picture]
 
 In Blender, the mesh is mostly composed of quads. When exported as GLTF file, these will be converted to triangles.
+In our game we will load the object from the GLTF file into a Scene object and then use the mesh of its ModelInstance 
+to construct the nav mesh.
 
-Of course, constructing a nav mesh by hand is not ideal. And it needs to be redone whenever you change the map.  There are techniques to generate a navmesh automatically, but we’ll leave these for now.
+Of course, creating a nav mesh by hand is not ideal. And it needs to be redone whenever you change the map. 
+There are techniques to generate a navmesh automatically, but we’ll leave these for another day.
 
-Let us write some code to create a list of nodes from a mesh.  We already saw earlier some code to go through each triangle of a ModelInstance.  This code will be similar.
+Let us write some code to create a list of nodes from the mesh of a ModelInstance object.  We already saw earlier some code to go through each triangle of a ModelInstance.  This code will be similar.
 
 Let us first define a class for a node in the navigation mesh, a simple triangle with an id value for aid in debugging.
 
@@ -52,6 +55,10 @@ Let us first define a class for a node in the navigation mesh, a simple triangle
 Now we can create a class to represent a navigation mesh. Its constructor will take a ModelInstance, decompose it into the vertices and indices of its mesh,
 and generate an array of NavNode objects from this.
 
+It turns out that some triangles we extract from the mesh are actually not triangles at all.  This is an artifact of the way we build the mesh, or maybe from the conversion.  Sometimes two corners of the triangle
+have exactly the same position.  We will filter out such degenerate triangles and only retain proper triangles as nodes.
+
+
 
 ```java
 public class NavMesh {
@@ -63,14 +70,14 @@ public class NavMesh {
     public NavMesh( ModelInstance instance ) {
         Mesh mesh = instance.nodes.first().parts.first().meshPart.mesh;
         int primitiveType = instance.nodes.first().parts.first().meshPart.primitiveType;
-        if(primitiveType != GL20.GL_TRIANGLES)
+        if (primitiveType != GL20.GL_TRIANGLES)
             throw new RuntimeException("Nav mesh must be GL_TRIANGLES");
 
         int numVertices = mesh.getNumVertices();
         int numIndices = mesh.getNumIndices();
-        int stride = mesh.getVertexSize()/4;        // floats per vertex in mesh, e.g. for position, normal, textureCoordinate, etc.
+        int stride = mesh.getVertexSize() / 4;        // floats per vertex in mesh, e.g. for position, normal, textureCoordinate, etc.
 
-        float[] vertices = new float[numVertices*stride];
+        float[] vertices = new float[numVertices * stride];
         short[] indices = new short[numIndices];
         // find offset of position floats per vertex, they are not necessarily the first 3 floats
         int posOffset = mesh.getVertexAttributes().findByUsage(VertexAttributes.Usage.Position).offset / 4;
@@ -79,35 +86,33 @@ public class NavMesh {
         mesh.getIndices(indices);
 
         navNodes = new Array<>();
-        Vector3 a = new Vector3();
-        Vector3 b = new Vector3();
-        Vector3 c = new Vector3();
-        int numTriangles = numIndices/3;
+        Vector3 corners[] = new Vector3[3];
+        for (int j = 0; j < 3; j++)
+            corners[j] = new Vector3();
 
-        for(int i = 0; i < numIndices; i+=3) {
-
-            int index = indices[i];
-            float x = vertices[stride*index+posOffset];
-            float y = vertices[stride*index+1+posOffset];
-            float z = vertices[stride*index+2+posOffset];
-            a.set(x, y, z);
-
-            index = indices[i+1];
-            x = vertices[stride*index+posOffset];
-            y = vertices[stride*index+1+posOffset];
-            z = vertices[stride*index+2+posOffset];
-            b.set(x, y, z);
-
-            index = indices[i+2];
-            x = vertices[stride*index+posOffset];
-            y = vertices[stride*index+1+posOffset];
-            z = vertices[stride*index+2+posOffset];
-            c.set(x, y, z);
-
-            NavNode node = new NavNode(i/3, a, b, c);
-            navNodes.add(node);
+        int id = 0;
+        for (int i = 0; i < numIndices; i += 3) {
+            for (int j = 0; j < 3; j++) {
+                int index = indices[i + j];
+                float x = vertices[stride * index + posOffset];
+                float y = vertices[stride * index + 1 + posOffset];
+                float z = vertices[stride * index + 2 + posOffset];
+                corners[j].set(x, y, z);
+            }
+            // skip degenerate triangles (i.e. where two corners are the same)
+            if (corners[0].epsilonEquals(corners[1]) ||
+                    corners[1].epsilonEquals(corners[2]) ||
+                    corners[2].epsilonEquals(corners[0])) {
+                // if this is not really a triangle because 2 verts are identical, or very close
+                // mark it as degenerate and always fail isPointInTriangle() because the calculations won't work
+                Gdx.app.log("degenerate triangle: " + i / 3, "will be ignored");
+            } else {
+                NavNode node = new NavNode(id++, corners[0], corners[1], corners[2]);
+                navNodes.add(node);
+            }
         }
-        Gdx.app.log("Nav Nodes:", ""+navNodes.size);
+        Gdx.app.log("Nav Nodes:", "" + navNodes.size);
+    }
 }
 ```
 
@@ -135,14 +140,15 @@ public class NavNode {
     }
 ```
 
-Having added storage for connectivity in the node class, we can now add the following code to the NavNesh constructore to determine which triangles are connected:
+Having added a way to keep track of the neighbours of each node, we can now add the following code to the NavNesh constructore to determine which triangles are connected:
 
-A first attempt of this code looked if two triangles shared the same index values.  However, it turned out there were some duplicate vertices in the handcrafted mesh. So a more
+A first attempt of this code checked if two triangles shared the same index values.  However, it turned out there were some duplicate vertices in the handcrafted mesh. So a more
 robust approach is to compare the positions of vertices.  And to allow for floating point errors or vertices which are very close together, we use `Vector3.epsilonEquals()` to compare them.
 
 (Another approach would be to process the index and vertex arrays first to remove duplicate vertices).
 
-In this code we check each pair of triangles and consider them connected if exactly two vertices of the first triangle appear also in the second triangle. If the two nodes share an edge we call `addNeighbour()` on each of them to add the other node as a neighbour.
+In this code we check each pair of triangles and consider them connected if exactly two vertices of the first 
+triangle appear also in the second triangle. If so, we call `addNeighbour()` on both nodes to add the other node as a neighbour.
 
 
 ```java
@@ -179,20 +185,25 @@ In this code we check each pair of triangles and consider them connected if exac
         Gdx.app.log("Nav Node Connections:", ""+links);
 ```
 
-To map navigation actors to nodes we need a method to check if they are inside a node.
+To locate the node that a character is in, we need a method to check if a point is inside a node.
 For this we add the following method to NavNode which makes use of the standard LibGDX method `Intersector.isPointInTriangle()`.
-However first we need to project the point to the plane of the triangle. For example, the enemy position is taken from the centre of the collision geometry which is some distance above the ground, whereas the node is at ground level.  So first we project the point down to ground level, then we can check if it is inside the triangle.  
+However first we need to project the point to the plane of the triangle, because our game object positions are not at floor level but 
+at the center of the collision geometry. 
+So first we need to project the point down to ground level (or rather: the plane of the triangle), then we can check if it is inside the triangle.  
 
-For this we need to calculate the normal vector of the node, i.e. a unit vector that is perpendicular to the triangle.  This we can calculate as the normalized cross product of two edges.
+For this we need to calculate the normal vector of the node, i.e. a unit vector that is perpendicular to the triangle.  
+This we can calculate as the normalized cross product of two edges.
 
-We can find the distance of a point to a plane by using the plane equation: Ax + By + Cz + d = 0, where (A, B, C) is the normal vector and (x, y, z) is the point.
-We can find the value of d by solving the plane equation for one of the vertices of the triangle (which we know lies on the plane):         
+We can find the distance of a point to a plane by using the plane equation: *Ax + By + Cz + d = 0*, where *(A, B, C)* is the normal vector and (x, y, z) is the point.
+We can find the value of *d* by solving the plane equation for one of the vertices of the triangle (which by definition lies on the triangle plane):         
 
         d = -(normal.x*a.x + normal.y*a.y + normal.z*a.z);
 
-
-In the method `isPointInTriangle()` we calculate the distance opf the point to the node's plane.  If the distance is negative, the point is underneath the node (e.g. the enemy is walking under a bridge) and we return
-false.  If the distance is too large (compared to the height of the character), we also return false. For example, if the enemy is walking over a bridge we don't want to match with a node underneath the bridge, only with the one just below the feet.
+In the method `isPointInTriangle()` we calculate the distance of the point to the node's plane.  
+If the distance is negative, the point is below the plane (e.g. the enemy is walking under a bridge) and we return
+false.  If the distance is too large (compared to the height of the character), it means the character is not stood on the plane, 
+and we also return false. For example, if the enemy is walking over a bridge we don't want to match with nodes underneath the bridge, 
+only with the one just below the feet.
 
 ```java
 public class NavNode {
@@ -245,46 +256,23 @@ if the navmesh grows larger, it's probably a good idea to use some spatial data 
     }
 ```
 
-It turns out that some triangles we extracted from the mesh are actually not triangles at all.  This is an artifact of the way we build the mesh, or maybe from the conversion.  Sometimes two corners of the triangle
-have exactly the same position.  We will mark such nodes as 'degenerate' and skip them in further processing. (Alternatively we could remove these). 
 
-Here we also add two new fields: `steps` and `prev` which we will use in a minute.
-
-```java
-public class NavNode {
-    public final int id;
-    public final Vector3 p0, p1, p2;
-    public Array<NavNode> neighbours;
-    public Vector3 normal;
-    private float d;        // for plane equation
-    public boolean degenerate = false;
-    public int steps;
-    public NavNode prev;
-
-    public NavNode( int id, Vector3 a, Vector3 b, Vector3 c) {
-        this.id = id;
-        neighbours = new Array<>(3);
-        p0 = new Vector3(a);
-        p1 = new Vector3(b);
-        p2 = new Vector3(c);
-
-        float eps = 1e-16f;
-        if(p0.epsilonEquals(p1, eps) || p1.epsilonEquals(p2, eps) || p2.epsilonEquals(p0, eps)) {
-            // if this is not really a triangle because 2 verts are identical, or very close
-            // mark it as degenerate and always fail isPointInTriangle() because the calculations won't work
-            Gdx.app.log("degenerate triangle: "+id, "will be ignored");
-            degenerate = true;
-        }
-        ...
-    }
-```
 
 Now we come to step 2 of our approach which is needed to find the shortest path to the player.  Since all enemies have the player as target, we will mark each node with the distance (in steps) to the target.
-For this we use Dijkstra's algorithm.  The node that the player is in has a distance of zero steps to the target.  Its immediate neighbours have a distance of 1 step.
-The algorithm continues to assign a distance to each node, but if a node can be reached via different paths it will be marked with the smallest distance.
+For this we use a variant of Dijkstra's algorithm.  
+
+For this algorithm, we add two new fields to the NavNode class: `int steps;` and `NavNode prev;`. The first one is to store the distance
+to the target.  The second one is to point to the node's neighbour which is closest to the target.
+
+The node that the player is in has of course a distance of zero steps to the target.  Its immediate neighbours have a distance of 1 step.
+The algorithm continues to assign a distance to each node by visiting all nodes via the neighbour connections and increasing the 
+number of steps for each connection we follow. 
+However, if a node can be reached via different paths it will be marked with the smallest distance.
 
 Note: normally Dijkstra's algorithm is used to find the shortest distance from A to B and you can stop once you reached B.  Here we aim to reuse the information between all the enemies and we run the algorithm
 until all nodes are visited.  We need to run this algorithm every time the player moves to another node.
+
+
 
 ```java
     // update distance for each node to the target point
@@ -305,8 +293,7 @@ until all nodes are visited.  We need to run this algorithm every time the playe
             NavNode node = navNodes.get(i);
             node.steps = Integer.MAX_VALUE;
             node.prev = null;
-            if(!node.degenerate)
-                Q.add(node);
+            Q.add(node);
         }
         target.steps = 0;
 
@@ -343,8 +330,6 @@ By calling `update()` and `render()` in the main render loop, after the game wor
 shaded from red to blue. As the player runs around we can see that the colours adapt.
 
 This is also a good moment to check the whole nav mesh is continuous, i.e. all the corners are reached.  If there are issues of connectivity between nodes, you could have multiple "islands" which appear not connected and perhaps you need to check the mesh for duplicate vertices that need to be merged.
-
-
 
 
 ```java
@@ -419,21 +404,23 @@ Now, for step 3, we can quickly determine a path from an enemy (located at start
 
 
 ```java
-   private void findPath( Vector3 startPoint, Array<NavNode> path ) {
+    private void  findPath( Vector3 startPoint, Array<NavNode> path ) {
         NavNode node = findNode(startPoint, Settings.navHeight);
         path.clear();
-        while( node != null ) {
-            path.add(node);
-            node = node->prev;
+        while (node != null) {
+        path.add(node);
+        node = node.prev;
         }
     }
 ```
     
-For step 4, we will use an algorithm called ["Simple Stupid Funnel Algortihm"](https://digestingduck.blogspot.com/2010/03/simple-stupid-funnel-algorithm.html) by Mikko Mononen to find a nice tight route through the nodes
+For step 4, we will use an algorithm called ["Simple Stupid Funnel Algorithm"](https://digestingduck.blogspot.com/2010/03/simple-stupid-funnel-algorithm.html) by Mikko Mononen to find a nice tight route through the nodes
 for the enemy to reach the player. In particular, we want the route to follow straight lines as much as possible and to hug inside corners. This is also called a string pulling algorithm.
 Imagine you thread a string through the sequence of nodes we found before and then we pull it tight.
 
 This algorithm steps through a sequence of "portals".  A portal is nothing more than the edge between two nodes on the path. Each portal has a left and a right vertex as seen from the first node.  (The algorithm is essentially a 2d algorithm.  We can use it in a 3d game as long as the movement is mostly horizontal, e.g. we cannot walk up a vertical wall).
+We add a boolean to indicate if there is a slope change at this portal, for example if the edge is
+at the bottom of a ramp.
 
 The Portal class is defined as follows:
 
@@ -442,15 +429,22 @@ The Portal class is defined as follows:
     public static class Portal {
         public Vector3 left;
         public Vector3 right;
-
+        public boolean slopeChange;     // indicator if portal connects nodes with different slope
+    
         public Portal(Vector3 left, Vector3 right, boolean slopeChange ) {
             this.left = new Vector3(left);
             this.right = new Vector3(right);
+            this.slopeChange = slopeChange;
         }
     }
 ```
 
-We can code the following to find the shared edge between two connected triangles.  We return the start and end vector of the connecting edge.
+
+
+
+
+
+This makes use of the following method to find the shared edge between two connected triangles.  We return the start and end vector of the connecting edge.
 Since our triangles are by convention counter-clockwise, this means the start will be the right vertex and the end will be the left vertex of the portal as we move
 from node a to node b.
 
@@ -479,11 +473,19 @@ from node a to node b.
     }
 ```
 
-The algorithm is implemented in method `makePath()`. First it build an array of portals based on the array of navigation nodes we built earlier with `findPath()`.
-Then it uses a funnel shape (an apex, a left foot and a right foot) to step through the portals. First moving the right foot to the right side of a portal, then the left foot to the left side of a portal. 
+The string pulling algorithm is implemented in method `makePath()`. 
+First it build an array of portals based on the array of navigation nodes we built earlier with `findPath()`.
+A slope change is detected by taking the dot product of the normals of both nodes.  If both normals
+are pointing the same way the dot product is 1.  If the dot product is less than one, the two nodes have
+a different slope.
+
+Then it uses a funnel shape (an apex, a left foot and a right foot) to step through the portals one by one. 
+First moving the right foot to the right side of a portal, then the left foot to the left side of a portal. 
 Then advancing to the next portal.  If we cannot move a foot because the portal side is hidden around a corner, we skip it.  This can be detected because the line from the apex to the portal side falls outside the funnel.  If moving a foot to the next portal side means the feet would cross each other, we move the funnel to the previous foot position and we restart. In this case we add a waypoint to the new apex position.
 
 To check if two vectors are crossing each other we use the `area()` method where we basically determine the sign of the (2d) cross product. For example, if the funnel has a negative area it means the two legs are crossed.
+
+We adapt the algorithm a little to force a waypoint whenever a portal indicates a slope change.
 
 ```java
     private void makePath( Vector3 startPoint, Vector3 targetPoint, Array<NavNode> nodePath, Array<Vector3> pointPath ) {
@@ -571,7 +573,6 @@ To check if two vectors are crossing each other we use the `area()` method where
                 rightIndex = apexIndex;
                 continue;
             }
-
         }
         pointPath.add(endPoint);
     }
@@ -587,9 +588,11 @@ To check if two vectors are crossing each other we use the `area()` method where
     }
 ```
 
-The enemy movement logic can now be coded as follows.  The enemy object calls the nav mesh object to get an updated path.  If the player did not move, the existing
-path can be reused.  Then the enemy character move from waypoint to waypoint following the path vectors. When the enemy position has reached a waypoint, it targets the 
-next waypoint. The enemy's direction is slerped towards the waypoint. 
+The enemy movement logic can now be coded as follows.  The enemy object calls the nav mesh object to get an updated path.  
+If the player did not move, the existing path can be reused.  
+Then the enemy character moves from waypoint to waypoint following the path vectors. 
+When the enemy position has reached a waypoint, it targets the next waypoint. The enemy's direction is slerped towards the waypoint to 
+smooths the character's motion. 
 
 ```java
 public class CookBehaviour extends Behaviour {
@@ -640,7 +643,6 @@ public class CookBehaviour extends Behaviour {
 
 
 to add:
-We will extend the algorithm a bit to cope with slopes
  - enemies outside nodes
 
 

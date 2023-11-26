@@ -171,11 +171,8 @@ public class PlayerController extends InputAdapter  {
             player.body.geom.getBody().setGravityMode(true);
         }
 
-        if( keys.containsKey(runShiftKey))
-            isRunning = true;
-
         float moveSpeed = Settings.walkSpeed;
-        if(isRunning)
+        if(isRunning || keys.containsKey(runShiftKey))  // keyboard or controller run shift?
             moveSpeed *= Settings.runFactor;
 
         // mouse to move view direction

@@ -45,7 +45,7 @@ public class GameScreen extends ScreenAdapter {
         gridView = new GridView();
         physicsView = new PhysicsView(world);
         scopeOverlay = new ScopeOverlay();
-        navMeshView = new NavMeshView(world);
+        navMeshView = new NavMeshView();
 
         InputMultiplexer im = new InputMultiplexer();
         Gdx.input.setInputProcessor(im);

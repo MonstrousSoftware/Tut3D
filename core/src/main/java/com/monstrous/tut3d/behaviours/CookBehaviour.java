@@ -7,6 +7,7 @@ import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.GameObjectType;
 import com.monstrous.tut3d.Settings;
 import com.monstrous.tut3d.World;
+import com.monstrous.tut3d.nav.NavActor;
 import com.monstrous.tut3d.nav.NavNode;
 import com.monstrous.tut3d.physics.CollisionShapeType;
 
@@ -22,13 +23,14 @@ public class CookBehaviour extends Behaviour {
     private final Vector3 playerVector = new Vector3();
     public Array<Vector3> path;
     private int wayPointIndex;
+    public NavActor navActor;
 
 
     public CookBehaviour(GameObject go) {
         super(go);
         shootTimer = SHOOT_INTERVAL;
         go.body.setCapsuleCharacteristics();
-        path = new Array<>();
+        //path = new Array<>();
     }
 
     public Vector3 getDirection() {
@@ -43,27 +45,36 @@ public class CookBehaviour extends Behaviour {
         playerVector.set(world.getPlayer().getPosition()).sub(go.getPosition());    // vector to player in a straight line
         float distance = playerVector.len();
 
+        if(navActor == null){
+            navActor = new NavActor(world.navMesh);
+
+        }
         // update path to the player's current position using the nav mesh
         // only needs to be recalculated if the target moved
-        boolean rebuilt = world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), path);
-        if(rebuilt)
-            wayPointIndex = 1;      // reset to start of new path
+        navActor.setTargetPoint( world.getPlayer().getPosition() );
+        navActor.setStartPoint( go.getPosition() );
+        //path = navActor.getPath();
+        Vector3 wayPoint = navActor.getWayPoint();
 
-        if(path.size > 1) {
-            Vector3 wayPoint = path.get(wayPointIndex);
-            if (wayPointIndex < path.size-1 && wayPoint.dst(go.getPosition()) < 1) {     // reached a waypoint, move to next one
-                wayPointIndex++;
-                wayPoint = path.get(wayPointIndex);
-                //Gdx.app.log("Cook going to next waypoint", "WP:"+wayPoint.toString());
-            }
+//        boolean rebuilt = world.navMesh.makePath(go.getPosition(), world.getPlayer().getPosition(), path);
+//        if(rebuilt)
+//            wayPointIndex = 1;      // reset to start of new path
+
+//        if(path.size > 1) {
+//            Vector3 wayPoint = path.get(wayPointIndex);
+//            if (wayPointIndex < path.size-1 && wayPoint.dst(go.getPosition()) < 1) {     // reached a waypoint, move to next one
+//                wayPointIndex++;
+//                wayPoint = path.get(wayPointIndex);
+//                //Gdx.app.log("Cook going to next waypoint", "WP:"+wayPoint.toString());
+//            }
 
             float climbFactor = 1f;
-            if ( wayPoint.y > path.get(wayPointIndex-1).y + 0.1f) {    // if we need to climb up, disable the gravity
-                go.body.geom.getBody().setGravityMode(false);
-                climbFactor = 2f;       // and apply some extra force
-                //Gdx.app.log("Cook climbing slope", "");
-            } else
-                go.body.geom.getBody().setGravityMode(true);
+//            if ( wayPoint.y > path.get(wayPointIndex-1).y + 0.1f) {    // if we need to climb up, disable the gravity
+//                go.body.geom.getBody().setGravityMode(false);
+//                climbFactor = 2f;       // and apply some extra force
+//                //Gdx.app.log("Cook climbing slope", "");
+//            } else
+//                go.body.geom.getBody().setGravityMode(true);
 
             // move towards waypoint
             targetDirection.set(wayPoint).sub(go.getPosition());  // vector towards way point
@@ -74,7 +85,7 @@ public class CookBehaviour extends Behaviour {
 
             if(distance > 5f)   // move unless quite close
                 go.body.applyForce(targetDirection.scl(Settings.cookForce * climbFactor));
-        }
+
 
         // every so often shoot a pan
         shootTimer -= deltaTime;

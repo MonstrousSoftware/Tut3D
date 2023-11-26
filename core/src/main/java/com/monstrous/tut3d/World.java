@@ -70,7 +70,7 @@ public class World implements Disposable {
     public void setPlayer( GameObject player ){
         this.player = player;
         player.body.setCapsuleCharacteristics();
-        navMesh.updateDistances(player.getPosition());
+        //navMesh.updateDistances(player.getPosition());
     }
 
     public PlayerController getPlayerController() {
@@ -146,14 +146,14 @@ public class World implements Disposable {
             go.update(this, deltaTime);
         }
 
-        navNode = navMesh.findNode( player.getPosition(), Settings.groundRayLength );
+//        navNode = navMesh.findNode( player.getPosition(), Settings.groundRayLength );
 //        if(navNode == null)
 //            Gdx.app.error("player outside the nav mesh:", " pos:"+ player.getPosition().toString());
-         if (navNode != null && navNode.id != prevNode) {
-            Gdx.app.log("player moves to nav node:", "" + navNode.id + " pos:" + player.getPosition().toString());
-            prevNode = navNode.id;
-            navMesh.updateDistances(player.getPosition());
-        }
+//         if (navNode != null && navNode.id != prevNode) {
+//            Gdx.app.log("player moves to nav node:", "" + navNode.id + " pos:" + player.getPosition().toString());
+//            prevNode = navNode.id;
+//            navMesh.updateDistances(player.getPosition());
+//        }
     }
 
     private void syncToPhysics() {

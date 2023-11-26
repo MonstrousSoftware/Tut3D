@@ -22,14 +22,12 @@ import com.monstrous.tut3d.behaviours.CookBehaviour;
 public class NavMeshView implements Disposable {
 
     private final ModelBatch modelBatch;
-    private final World world;      // reference
     private ModelBuilder modelBuilder;
     private Array<ModelInstance> instances;
     private Array<Model> models;
 
 
-    public NavMeshView(World world) {
-        this.world = world;
+    public NavMeshView() {
         modelBatch = new ModelBatch();
         instances = new Array<>();
         models = new Array<>();
@@ -49,16 +47,50 @@ public class NavMeshView implements Disposable {
 
         buildNavNodes(world.navMesh.navNodes);
 
+        buildPortals(NavStringPuller.portals);
+
         int numObjects = world.getNumGameObjects();
         for(int i = 0; i < numObjects; i++) {
             GameObject go = world.getGameObject(i);
             if(go.type != GameObjectType.TYPE_ENEMY)
                 continue;
-            buildPath(((CookBehaviour)go.behaviour).path);
+            NavActor actor = ((CookBehaviour)go.behaviour).navActor;
+            buildNavNodePath(actor.navNodePath);
+            buildPath(actor.path);
         }
     }
 
     public void buildNavNodes(Array<NavNode> path ) {
+        if (path == null || path.size == 0) {
+            return;
+        }
+
+        modelBuilder = new ModelBuilder();
+        modelBuilder.begin();
+        MeshPartBuilder meshBuilder;
+
+        for(NavNode navNode : path ) {
+
+            Material material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
+            meshBuilder = modelBuilder.part("part", GL20.GL_LINES, VertexAttributes.Usage.Position, material);
+
+
+            meshBuilder.ensureVertices(3);
+            short v0 = meshBuilder.vertex(navNode.p0.x, navNode.p0.y, navNode.p0.z);
+            short v1 = meshBuilder.vertex(navNode.p1.x, navNode.p1.y, navNode.p1.z);
+            short v2 = meshBuilder.vertex(navNode.p2.x, navNode.p2.y, navNode.p2.z);
+            meshBuilder.ensureTriangleIndices(1);
+            meshBuilder.triangle(v0, v1, v2);
+        }
+        Model model = modelBuilder.end();
+        ModelInstance instance = new ModelInstance(model, Vector3.Zero);
+        models.add(model);
+        instances.add(instance);
+    }
+
+
+
+    public void buildNavNodePath(Array<NavNode> path ) {
         if (path == null || path.size == 0) {
             return;
         }
@@ -86,6 +118,7 @@ public class NavMeshView implements Disposable {
         instances.add(instance);
     }
 
+
     public void buildPath( Array<Vector3> path ) {
         if (path == null || path.size == 0) {
             return;
@@ -111,7 +144,7 @@ public class NavMeshView implements Disposable {
         instances.add(instance);
     }
 
-    public void buildPortals( Array<NavMesh.Portal> portals ) {
+    public void buildPortals( Array<NavStringPuller.Portal> portals ) {
         if (portals.size == 0) {
             return;
         }
@@ -120,9 +153,9 @@ public class NavMeshView implements Disposable {
         modelBuilder.begin();
         MeshPartBuilder meshBuilder;
 
-        Material material = new Material(ColorAttribute.createDiffuse(Color.GRAY));
+        Material material = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
         meshBuilder = modelBuilder.part("line", GL20.GL_LINES, VertexAttributes.Usage.Position, material);
-        for(NavMesh.Portal portal : portals ) {
+        for(NavStringPuller.Portal portal : portals ) {
 
             Vector3 v0 = portal.left;
             Vector3 v1 = portal.right;
