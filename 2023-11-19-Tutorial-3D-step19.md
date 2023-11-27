@@ -702,10 +702,12 @@ We will code this logic in a class called `NavActor`:
         }
 ```
 
-Now it is time to make the enemy characters make use of this.
+Now it is time to make the enemy characters make use of this.  This is done in the `update()` method of the `CookBehaviour` class.
+This class gets a `NavActor` object as field.  This is used to get the next way point for a route from the enemy position to the player position.
+We also use the `getSlope()` method to check if we need to climb up, and if so we temporarily disable gravity on this rigid body.
+The enemy's direction is 'slerped' towards the way point, so that the character turns smoothly between path segments.  And then a force is applied
+in the direction of the way point.
 
-The enemy's direction is slerped towards the waypoint to 
-smooths the character's motion. 
 
 ```java
     public class CookBehaviour extends Behaviour {
@@ -755,6 +757,6 @@ smooths the character's motion.
 ```
 
 
-This concludes step 19 where we adapted enemy behaviour to appear a bit smarter by using a navigation mesh.
+This concludes step 19 where we adapted enemy behaviour to appear smarter by use of a navigation mesh.
 
 

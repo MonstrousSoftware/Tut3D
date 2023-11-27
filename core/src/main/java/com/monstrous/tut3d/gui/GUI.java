@@ -127,11 +127,11 @@ public class GUI implements Disposable {
 
         sb.setLength(0);
         sb.append(Gdx.graphics.getFramesPerSecond());
-        sb.append(" player at [x=");
-        sb.append((int)world.getPlayer().getPosition().x);
-        sb.append(", z=");
-        sb.append((int)world.getPlayer().getPosition().z);
-        sb.append("]");
+//        sb.append(" player at [x=");
+//        sb.append((int)world.getPlayer().getPosition().x);
+//        sb.append(", z=");
+//        sb.append((int)world.getPlayer().getPosition().z);
+//        sb.append("]");
         fpsLabel.setText(sb.toString());
 
         sb.setLength(0);
