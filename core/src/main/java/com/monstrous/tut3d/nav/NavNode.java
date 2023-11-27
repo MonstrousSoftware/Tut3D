@@ -2,23 +2,22 @@ package com.monstrous.tut3d.nav;
 
 
 // node of the navigation mesh
-// i.e. a triangle
+// i.e. a triangle which is connected to other nodes
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
 public class NavNode {
-    public final int id;
-    public final Vector3 p0, p1, p2;
-    public Array<NavNode> neighbours;
-    public Vector3 normal;
-    private float d;        // for place equation
-    public final Vector3 centre;
+    public final int id;                    // for debugging
+    public final Vector3 p0, p1, p2;        // the corners
+    public Array<NavNode> neighbours;       // connection to other nodes
+    public Vector3 normal;                  // normal vector
+    private float d;                        // for plane equation
+    public final Vector3 centre;            // centre point
     private Vector3 p = new Vector3();      // tmp var
-    public int steps;
-    public NavNode prev;
+    public int steps;                       // for use in search algo
+    public NavNode prev;                    // for use in search algo
 
 
     public NavNode( int id, Vector3 a, Vector3 b, Vector3 c) {

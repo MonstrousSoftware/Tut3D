@@ -47,7 +47,7 @@ public class NavMeshView implements Disposable {
 
         buildNavNodes(world.navMesh.navNodes);
 
-        buildPortals(NavStringPuller.portals);
+        //buildPortals(NavStringPuller.portals);
 
         int numObjects = world.getNumGameObjects();
         for(int i = 0; i < numObjects; i++) {
@@ -71,7 +71,7 @@ public class NavMeshView implements Disposable {
 
         for(NavNode navNode : path ) {
 
-            Material material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
+            Material material = new Material(ColorAttribute.createDiffuse(Color.GRAY));
             meshBuilder = modelBuilder.part("part", GL20.GL_LINES, VertexAttributes.Usage.Position, material);
 
 

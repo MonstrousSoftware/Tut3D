@@ -6,7 +6,7 @@ import com.monstrous.tut3d.Settings;
 
 public class NavStringPuller {
 
-    public static Array<Portal> portals = new Array<>();
+    private static Vector3 tmpVec = new Vector3();
 
     // a portal is an edge between two adjacent nodes (i.e. triangles) on the path
     public static class Portal {
@@ -24,18 +24,16 @@ public class NavStringPuller {
 
     // string pulling algo:
     // "simple stupid funnel algorithm" by Mikko Mononen
-    //
+    // (with the addition that slope changes force a way point)
 
     public static void makePath(Vector3 startPoint, Vector3 targetPoint, Array<NavNode> nodePath, Array<Vector3> pointPath ) {
 
-        //Array<Portal> portals = new Array<>();
+        Array<Portal> portals = new Array<>();
         Vector3 edgeStart = new Vector3();
         Vector3 edgeEnd = new Vector3();
 
         // build a list of portals, i.e. edges between triangles on the node path to the goal
-//        NavNode startNode = findNode(startPoint, Settings.navHeight);
-//        if(startNode != null)
-//            startPoint.y = startNode.p0.y;                                          // make sure to use node (floor) height, not character height
+
         portals.clear();
         portals.add(new Portal(startPoint, startPoint, false));
 
@@ -46,14 +44,8 @@ public class NavStringPuller {
             boolean slopeChange = ( node.normal.dot(nextNode.normal) < 0.99f ); // use dot product of normals to detect slope change
             portals.add(new Portal(edgeEnd, edgeStart, slopeChange));
         }
-        Vector3 endPoint = new Vector3(targetPoint);
-//        NavNode endNode = findNode(endPoint, Settings.navHeight);
-//        if(endNode == null) {
-//            endNode = findClosestNode(endPoint);        // we cannot get to the target, go to the centre of the closest node
-//            endPoint.set(endNode.centre);
-//        }
-//        endPoint.y = endNode.p0.y;
-        portals.add(new Portal(endPoint, endPoint, false));
+
+        portals.add(new Portal(targetPoint, targetPoint, false));
 
         // use the portals to create a list of way points
         pointPath.clear();
@@ -112,7 +104,7 @@ public class NavStringPuller {
             // force a way point on a slope change so that the path follows the slopes (e.g. over a bridge)
             // this is an addition to SSFA
             if(portal.slopeChange){
-                Vector3 wayPoint = new Vector3(portal.left).add(portal.right).scl(0.5f);    // mid point of portal
+                Vector3 wayPoint = new Vector3(portal.left).add(portal.right).scl(0.5f);    // mid point of portal, could be smarter
                 pointPath.add( wayPoint );
                 apex = wayPoint;
                 apexIndex = i;
@@ -125,29 +117,11 @@ public class NavStringPuller {
             }
 
         }
-        pointPath.add(endPoint);
+        // add end point if it was skipped
+        if(pointPath.size == 1 || !pointPath.get(pointPath.size-1).epsilonEquals(targetPoint))
+            pointPath.add(new Vector3(targetPoint) );
     }
 
-    // make a path by going through the mid-point of connecting edges
-    // looks rubbish
-    public static void makePathMidPoints( Vector3 startPoint, Vector3 targetPoint, Array<NavNode> nodePath, Array<Vector3> pointPath ) {
-
-        Vector3 edgeStart = new Vector3();
-        Vector3 edgeEnd = new Vector3();
-        pointPath.clear();
-        pointPath.add(new Vector3(startPoint));
-        for(int i = 0; i < nodePath.size-1; i++ ) {
-            NavNode node = nodePath.get(i);
-            NavNode nextNode = nodePath.get(i+1);
-            getEdge(node, nextNode, edgeStart, edgeEnd);
-
-            Vector3 midPoint = new Vector3(edgeStart);
-            midPoint.add(edgeEnd);
-            midPoint.scl(1/2f);
-            pointPath.add(  midPoint );
-        }
-        pointPath.add(  targetPoint );
-    }
 
     // get the edge between two triangles that we know are connected
     private static void getEdge(NavNode a, NavNode b, Vector3 start, Vector3 end ){

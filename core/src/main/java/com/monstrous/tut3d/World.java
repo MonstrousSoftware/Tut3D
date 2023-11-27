@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.tut3d.behaviours.CookBehaviour;
 import com.monstrous.tut3d.inputs.PlayerController;
 import com.monstrous.tut3d.nav.NavMesh;
+import com.monstrous.tut3d.nav.NavMeshBuilder;
 import com.monstrous.tut3d.nav.NavNode;
 import com.monstrous.tut3d.physics.*;
 import net.mgsx.gltf.scene3d.scene.Scene;
@@ -86,7 +87,7 @@ public class World implements Disposable {
         }
         PhysicsBody body = null;
         if(type == GameObjectType.TYPE_NAVMESH){
-            navMesh = new NavMesh(scene.modelInstance);
+            navMesh = NavMeshBuilder.build(scene.modelInstance);
             return null;
         }
         body = factory.createBody(collisionInstance, shapeType, type.isStatic);

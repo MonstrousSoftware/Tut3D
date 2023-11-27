@@ -50,12 +50,10 @@ public class Populator {
 
 
         world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(-15, 1f, -18) );  // bad guy
-//        world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(15, 1f, 20) );  // bad guy
-//        world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(-25, 1f, 25) );  // bad guy
-//        world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(25, 1f, 25) );  // bad guy
+        world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(15, 1f, 20) );  // bad guy
+        world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(-25, 1f, 25) );  // bad guy
+        world.spawnObject(GameObjectType.TYPE_ENEMY, "cook",  "cookProxy", CollisionShapeType.CAPSULE, true, new Vector3(25, 1f, 25) );  // bad guy
 
-
-//        GameObject go = world.spawnObject(GameObjectType.TYPE_PLAYER, "ducky",null, CollisionShapeType.CAPSULE, true, new Vector3(22,6,-25));
         GameObject go = world.spawnObject(GameObjectType.TYPE_PLAYER, "ducky",null, CollisionShapeType.CAPSULE, true, new Vector3(5,1,5));
         world.setPlayer(go);
     }
