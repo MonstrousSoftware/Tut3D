@@ -1,6 +1,5 @@
 package com.monstrous.tut3d.nav;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
