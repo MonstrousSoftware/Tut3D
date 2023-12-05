@@ -1,8 +1,6 @@
 package com.monstrous.tut3d.behaviours;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
 import com.monstrous.tut3d.GameObject;
 import com.monstrous.tut3d.GameObjectType;
 import com.monstrous.tut3d.Settings;
@@ -62,7 +60,7 @@ public class CookBehaviour extends Behaviour {
             direction.slerp(targetDirection, 0.02f);            // smooth rotation towards target direction
 
             if(distance > 5f)   // move unless quite close
-                go.body.applyForce(targetDirection.scl(Settings.cookForce * climbFactor));
+                go.body.applyForce(targetDirection.scl(deltaTime * 60f * Settings.cookForce * climbFactor));
         }
 
 

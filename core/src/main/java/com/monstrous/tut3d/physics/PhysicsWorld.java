@@ -14,10 +14,13 @@ import static com.github.antzGames.gdx.ode4j.ode.OdeConstants.*;
 //
 public class PhysicsWorld implements Disposable {
 
+    static final float TIME_STEP = 0.025f;  // fixed physics time step
+
     DWorld world;
     public DSpace space;
     private final DJointGroup contactGroup;
     private final World gameWorld;
+    private float timeElapsed;
 
     public PhysicsWorld(World gameWorld) {
         this.gameWorld = gameWorld;
@@ -50,13 +53,22 @@ public class PhysicsWorld implements Disposable {
         world.setAutoDisableLinearThreshold(0.1);
         world.setAutoDisableAngularThreshold(0.1);
         world.setAutoDisableTime(2);
+
+        timeElapsed = 0;
     }
 
-    // update the physics with one (fixed) time step
-    public void update() {
-        space.collide(null, nearCallback);
-        world.quickStep(0.025f);
-        contactGroup.empty();
+    // update the physics
+    // time step of quickStep() needs to be fixed size
+    //
+    public void update(float deltaTime) {
+        timeElapsed += deltaTime;
+        while(timeElapsed > TIME_STEP) {
+            space.collide(null, nearCallback);
+            world.quickStep(TIME_STEP);
+            contactGroup.empty();
+
+            timeElapsed -= TIME_STEP;
+        }
     }
 
     private final DGeom.DNearCallback nearCallback = new DGeom.DNearCallback() {

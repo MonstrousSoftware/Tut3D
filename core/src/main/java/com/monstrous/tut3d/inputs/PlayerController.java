@@ -176,7 +176,7 @@ public class PlayerController extends InputAdapter  {
             moveSpeed *= Settings.runFactor;
 
         // mouse to move view direction
-        rotateView(mouseDeltaX*deltaTime*Settings.turnSpeed, mouseDeltaY*deltaTime*Settings.turnSpeed );
+        rotateView(mouseDeltaX*Settings.turnSpeed/60f, mouseDeltaY*Settings.turnSpeed/60f );
         mouseDeltaX = 0;
         mouseDeltaY = 0;
 
@@ -212,7 +212,7 @@ public class PlayerController extends InputAdapter  {
             rotateView(-deltaTime * Settings.turnSpeed, 0);
 
         if (isOnGround && keys.containsKey(jumpKey) )
-            linearForce.y =  Settings.jumpForce;
+            linearForce.y =  Settings.jumpForce * deltaTime * 60f;
 
         linearForce.scl(120);
         player.body.applyForce(linearForce);

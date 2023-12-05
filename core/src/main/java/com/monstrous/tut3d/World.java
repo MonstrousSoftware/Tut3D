@@ -1,7 +1,6 @@
 package com.monstrous.tut3d;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.math.Vector3;
@@ -139,7 +138,7 @@ public class World implements Disposable {
         }
         weaponState.update(deltaTime);
         playerController.update(player, deltaTime);
-        physicsWorld.update();
+        physicsWorld.update(deltaTime);
         syncToPhysics();
         for(GameObject go : gameObjects) {
             if(go.getPosition().y < -10)        // delete objects that fell off the map

@@ -115,6 +115,8 @@ public class GameView implements Disposable {
     public void render(float delta, float speed ) {
         if(!isOverlay)
             camController.update(world.getPlayer().getPosition(), world.getPlayerController().getViewingDirection());
+        else
+            cam.position.y = Settings.eyeHeight;
         addHeadBob(delta, speed);
         cam.update();
         refresh();
@@ -127,8 +129,9 @@ public class GameView implements Disposable {
     private void addHeadBob(float deltaTime, float speed ) {
         if( speed > 0.1f ) {
             bobAngle += speed * deltaTime * Math.PI / Settings.headBobDuration;
+
             // move the head up and down in a sine wave
-            cam.position.y +=  bobScale *  Settings.headBobHeight * (float)Math.sin(bobAngle);
+            cam.position.y +=  bobScale * Settings.headBobHeight * (float)Math.sin(bobAngle);
         }
     }
 
