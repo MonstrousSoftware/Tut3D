@@ -40,5 +40,5 @@ public class Settings {
     static public Vector3 gunPosition = new Vector3(-1.1f, 1.9f, 1.8f); // gun position in gun camera view
     static public float gunScale = 3.0f;
 
-    static public final String GLTF_FILE = "models/step12nav.gltf";
+    static public final String GLTF_FILE = "models/step21.gltf";
 }
